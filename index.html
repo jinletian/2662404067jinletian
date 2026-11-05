@@ -1,9 +1,10 @@
+
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>2662404067金乐添 的ai agent使用报告</title>
+<title>2662404067金乐添 的作业网站</title>
 <style>
   :root{
     --wb:#6366f1; --trae:#a855f7; --claude:#f59e0b;
@@ -128,6 +129,53 @@
     #dots{display:none}
     #topbar nav a{padding:6px 9px;font-size:12px}
   }
+
+  /* ===== 作业目录选择器 ===== */
+  .view{display:none}
+  .view.active{display:block}
+  #menu{padding:120px 22px 80px;max-width:960px;margin:0 auto;text-align:center}
+  #menu .mtitle{font-size:clamp(26px,5vw,40px);font-weight:800;letter-spacing:1px}
+  #menu .mtitle .grad{background:linear-gradient(90deg,#6366f1,#a855f7,#f59e0b);-webkit-background-clip:text;background-clip:text;color:transparent}
+  #menu .msub{color:var(--sub);margin-top:12px;font-size:15.5px}
+  .hwcards{display:grid;grid-template-columns:repeat(2,1fr);gap:22px;margin-top:42px;text-align:left}
+  .hwcard{position:relative;background:#fff;border:1px solid var(--line);border-radius:20px;padding:30px 26px;cursor:pointer;
+          box-shadow:0 8px 24px rgba(15,23,42,.06);transition:transform .25s,box-shadow .25s;border-top:5px solid;overflow:hidden}
+  .hwcard:hover{transform:translateY(-6px);box-shadow:0 16px 38px rgba(79,70,229,.18)}
+  .hwcard.c1{border-top-color:var(--wb)} .hwcard.c2{border-top-color:var(--claude)}
+  .hwcard .hnum{font-size:13px;font-weight:800;letter-spacing:2px;color:var(--sub)}
+  .hwcard .ht{font-size:21px;font-weight:800;margin:8px 0 10px}
+  .hwcard .hd{font-size:14px;color:#475569;min-height:42px}
+  .hwcard .hgo{margin-top:16px;font-size:13.5px;font-weight:700;color:#4f46e5}
+  @media(max-width:680px){.hwcards{grid-template-columns:1fr}}
+  /* 返回目录按钮 */
+  .backbar{max-width:960px;margin:0 auto;padding:14px 22px 0}
+  .backbtn{display:inline-flex;align-items:center;gap:6px;font-size:13.5px;font-weight:700;color:var(--sub);cursor:pointer;
+           background:#fff;border:1px solid var(--line);border-radius:10px;padding:8px 14px;transition:.2s}
+  .backbtn:hover{color:var(--ink);background:#eef2ff}
+  /* ===== 第二次作业：XOR 解析 ===== */
+  #hw2{padding:30px 0 70px}
+  .hw2wrap{max-width:960px;margin:0 auto;padding:0 22px}
+  .hw2wrap h1{font-size:clamp(26px,5vw,40px);font-weight:800;line-height:1.3}
+  .hw2wrap .lead{color:var(--sub);margin:10px 0 0;font-size:15.5px}
+  .note{background:linear-gradient(135deg,#fff7ed,#fef3c7);border:1px solid #fde68a;border-left:5px solid var(--warn);
+        border-radius:14px;padding:18px 20px;margin:22px 0;font-size:15.5px;color:#92400e;line-height:1.95}
+  .note b{color:#7c2d12}
+  .hw2wrap h2{font-size:25px;font-weight:800;margin-top:38px;display:flex;align-items:center}
+  .hw2wrap h2 .num{display:inline-block;width:36px;height:36px;line-height:36px;text-align:center;border-radius:11px;color:#fff;
+          font-size:17px;margin-right:12px;background:var(--claude);flex:none}
+  .hw2wrap h3{font-size:18px;font-weight:800;margin:26px 0 10px;color:#4f46e5}
+  .hw2wrap p{color:#374151;font-size:15.5px;line-height:1.95;margin:10px 0}
+  .hw2wrap ul,.hw2wrap ol{margin:10px 0 10px 24px;color:#374151;font-size:15.5px;line-height:1.95}
+  .hw2wrap li{margin:7px 0}
+  .hw2wrap code{background:#eef2ff;color:#4338ca;padding:1px 6px;border-radius:6px;font-size:13.5px}
+  .codebox{background:#0f172a;color:#e2e8f0;border-radius:14px;padding:18px 20px;overflow:auto;
+           font-size:12.5px;line-height:1.7;font-family:"SF Mono",Menlo,Consolas,monospace;margin:14px 0;max-height:560px}
+  .codebox pre{margin:0;white-space:pre}
+  .tag{display:inline-block;font-size:11.5px;font-weight:700;padding:2px 9px;border-radius:999px;background:#eef2ff;color:#4f46e5;margin-left:8px;vertical-align:middle}
+  .outbox{background:#0f172a;color:#86efac;border-radius:14px;padding:18px 20px;overflow:auto;
+          font-size:12.5px;line-height:1.7;font-family:"SF Mono",Menlo,Consolas,monospace;margin:14px 0}
+  .outbox pre{margin:0;white-space:pre}
+
 </style>
 </head>
 <body>
@@ -161,7 +209,28 @@
   <a href="#s3" data-label="三、使用体验感受"></a>
 </div>
 
-<main id="main">
+
+<!-- 作业目录选择器（进站首屏） -->
+<div id="menu" class="view active">
+  <div class="mtitle">2662404067 <span class="grad">金乐添 的作业网站</span></div>
+  <div class="msub">进入后可以查看各次课程作业 · 点击卡片开始阅读</div>
+  <div class="hwcards">
+    <div class="hwcard c1" data-view="main">
+      <div class="hnum">HOMEWORK 01</div>
+      <div class="ht">AI Agent 使用报告</div>
+      <div class="hd">对比 WorkBuddy / Trae / Claude 三类 Agent 的真实任务、结果与使用体验。</div>
+      <div class="hgo">查看第一次作业 →</div>
+    </div>
+    <div class="hwcard c2" data-view="hw2">
+      <div class="hnum">HOMEWORK 02</div>
+      <div class="ht">PyTorch XOR 代码解析</div>
+      <div class="hd">用 2-2-1 sigmoid 网络分类 XOR，含逐行中文解析、完整代码与运行结果。</div>
+      <div class="hgo">查看第二次作业 →</div>
+    </div>
+  </div>
+</div>
+
+<main id="main" class="view">
 
   <!-- HERO -->
   <section id="hero">
@@ -245,6 +314,236 @@
 
   <footer>2662404067金乐添 的ai agent使用报告 · 内容由本人撰写</footer>
 </main>
+
+<div id="hw2" class="view">
+  <div class="backbar"><span class="backbtn">← 返回作业目录</span></div>
+  <div class="hw2wrap">
+    <h1>第二次作业 · PyTorch XOR 神经网络代码解析</h1>
+    <p class="lead">用 2-2-1 sigmoid 网络分类 4 个 XOR 样本，附逐行中文解析与运行结果。</p>
+
+    <div class="note">
+      <b>作者说明：</b>这是我让agent对这段pytorch内的代码进行的解析，但是无论我怎么理解，都依然看不懂。
+    </div>
+
+    <h2><span class="num">1</span>这个作业在做什么</h2>
+    <p><b>XOR（异或）</b>是最经典的「线性不可分」问题：两个输入不一样时输出 1，一样时输出 0（00→0，01→1，10→1，11→0）。
+       你没法在图上画一条直线把 0 和 1 分开，所以<b>单层网络学不会它，必须加一个隐藏层</b>。这正是代码用
+       <code>2-2-1</code> 结构（2 输入 → 2 隐藏 → 1 输出）的原因。</p>
+    <ul>
+      <li><b>2</b> = 输入层 2 个神经元（对应 x1、x2）</li>
+      <li><b>2</b> = 隐藏层 2 个神经元（把问题变「可分」）</li>
+      <li><b>1</b> = 输出层 1 个神经元（输出 0~1 概率，&ge;0.5 判为 1）</li>
+    </ul>
+
+    <h2><span class="num">2</span>网络结构 2-2-1</h2>
+    <p>数据流动：<code>x(2维)</code> → 隐藏层(2维) → 输出(1维)，分别由权重 <code>W(2×2)</code> 与 <code>v(2×1)</code> 连接。
+       <code>sigmoid</code> 是一个把任意实数压到 (0,1) 的函数，用在隐藏层产生「激活值」，用在输出层（以对数几率形式）把分数变成概率。</p>
+
+    <h2><span class="num">3</span>训练的五步循环</h2>
+    <ol>
+      <li><b>准备数据</b>：4 个输入样本 x 与对应标签 target。</li>
+      <li><b>定义参数</b>：用 <code>nn.Parameter</code> 把权重 W、v 和偏置 b 标记为「可学习」，PyTorch 才会自动求梯度。</li>
+      <li><b>前向传播</b>：<code>hidden = sigmoid(x@W + b)</code>，<code>logits = hidden@v + b</code>，算出预测。</li>
+      <li><b>计算损失</b>：用 <code>binary_cross_entropy_with_logits</code> 衡量预测与真值的差距。</li>
+      <li><b>反向 + 更新</b>：<code>loss.backward()</code> 自动求梯度写入 <code>.grad</code>；<code>optimizer.step()</code> 按梯度更新参数。</li>
+    </ol>
+
+    <h2><span class="num">4</span>完整带注释代码<span class="tag">xor_sigmoid_net_explained.py</span></h2>
+    <div class="codebox"><pre>&quot;&quot;&quot;
+=============================================================================
+ 用 PyTorch 训练一个 2-2-1 网络来分类 4 个 XOR 样本（带超详细注释版）
+=============================================================================
+
+【什么是 XOR（异或）？】
+  输入有两位 x1、x2，输出规则是：
+    不一样 -&gt; 1，一样 -&gt; 0
+    00 -&gt; 0      01 -&gt; 1
+    10 -&gt; 1      11 -&gt; 0
+  这是最经典的「线性不可分」问题：你没法在图上画一条直线把 0 和 1 分开。
+  所以单层网络（输入直接连到输出）学不会它，必须加一个「隐藏层」。
+
+【网络结构 2-2-1 是什么意思？】
+  2  = 输入层有 2 个神经元（对应 x1、x2）
+  2  = 隐藏层有 2 个神经元（中间层，负责把问题变「可分」）
+  1  = 输出层有 1 个神经元（输出一个 0~1 之间的概率，&gt;=0.5 算 1）
+
+  数据流动：  x(2维) -&gt; 隐藏层(2维) -&gt; 输出(1维)
+              ↑W(2x2)        ↑v(2x1)
+
+【sigmoid 是什么？】
+  一个把任意实数压到 (0,1) 之间的函数：sigmoid(z)=1/(1+e^-z)
+  用在隐藏层：让隐藏神经元输出 0~1 的「激活值」。
+  用在输出层（这里用 sigmoid 的「对数几率」版本，见 loss 部分）：把分数变成概率。
+
+运行方式：
+  - 用 Anaconda Navigator 里启动的终端，或系统终端执行：
+      python xor_sigmoid_net_explained.py
+  - 或者用 PyCharm / VS Code 直接右键「运行」。
+=============================================================================
+&quot;&quot;&quot;
+
+# ① 导入 PyTorch。torch 是核心库，torch.nn.functional（简称 F）里放了很多现成的函数，
+#    比如 sigmoid、损失函数等。
+import torch
+import torch.nn.functional as F
+
+# 设定随机种子，让每次运行结果一致（方便学习和复现）。
+torch.manual_seed(7)
+
+# 把默认浮点精度设为 float64（双精度）。初学者一般用默认的 float32 即可，
+# 这里用 double 只是为了让打印的数字更精确、更稳定。
+torch.set_default_dtype(torch.float64)
+
+
+# -----------------------------------------------------------------------------
+# ② 准备数据（训练集）
+# -----------------------------------------------------------------------------
+# x 是一个 4 行 2 列的张量（tensor，可以理解为多维数组/矩阵）。
+#   每一行是一个样本；两列分别是 x1、x2。
+#   四行依次是：00、01、10、11
+# target 是「正确答案」（标签），每行一个数字：
+#   00-&gt;0，01-&gt;1，10-&gt;1，11-&gt;0
+x = torch.tensor(
+    [[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0]],
+    dtype=torch.float64,
+)
+target = torch.tensor([[0.0], [1.0], [1.0], [0.0]], dtype=torch.float64)
+
+
+# -----------------------------------------------------------------------------
+# ③ 定义模型参数（也就是「待学习的权重和偏置」）
+# -----------------------------------------------------------------------------
+# 神经网络要学的，其实就是一堆数字。我们用 nn.Parameter 把这些数字「标记」为
+# 可学习的参数——这样 PyTorch 在反向传播时会自动帮我们算它们的梯度并优化它们。
+#
+# 隐藏层：每个隐藏神经元接收 2 个输入，所以 W 是 2x2 的矩阵。
+#   W 的第 i 行 表示「第 i 个隐藏神经元」从两个输入接过来的权重。
+#   b_hidden 是 2 个偏置（每个隐藏神经元一个）。
+# 输出层：1 个输出神经元接收 2 个隐藏神经元的值，所以 v 是 2x1 的向量。
+#   b_output 是输出层的偏置（标量，一个数）。
+#
+# 注意：这里手动给定了「接近正确解」的初始值（而不是随机初始化），
+# 这样你能在很短时间内就看到它收敛，方便理解整个流程。
+#   W = [[ 2, -2],        # 让隐藏神经元 1 学习「是否(1,0)这种」
+#        [-2,  2]]        # 让隐藏神经元 2 学习「是否(0,1)这种」
+#   b_hidden = [-1, -1]
+#   v = [[3], [3]]        # 两个隐藏神经元「或」起来贡献给输出
+#   b_output = -2.5
+W = torch.nn.Parameter(torch.tensor([[2.0, -2.0], [-2.0, 2.0]]))
+b_hidden = torch.nn.Parameter(torch.tensor([-1.0, -1.0]))
+v = torch.nn.Parameter(torch.tensor([[3.0], [3.0]]))
+b_output = torch.nn.Parameter(torch.tensor([-2.5]))
+
+# 把所有「需要被优化的参数」收集到一个列表里，交给优化器。
+parameters = [W, b_hidden, v, b_output]
+
+# 优化器（optimizer）：负责根据梯度更新参数。
+#   Adam 是一种常用且稳健的优化算法。
+#   lr=0.03 是「学习率」，控制每一步更新的幅度：太大可能学不稳，太小学得太慢。
+optimizer = torch.optim.Adam(parameters, lr=0.03)
+
+
+# -----------------------------------------------------------------------------
+# ④ 训练循环（核心！）
+# -----------------------------------------------------------------------------
+# 我们反复地做一件事，共 300 次（每一次叫一个 epoch）：
+#   1) 前向传播：把数据送进网络，算出预测和损失
+#   2) 反向传播：算出每个参数该往哪个方向改（梯度）
+#   3) 更新参数：优化器按梯度更新参数
+for epoch in range(1, 301):  # epoch 从 1 数到 300
+
+    # —— 1) 清零上一轮的梯度 ——
+    # 每次反向传播会把梯度「累加」到 .grad 上，所以新的一轮开始前必须先清零，
+    # 否则梯度会越积越多，训练就乱了。
+    optimizer.zero_grad(set_to_none=True)
+
+    # —— 2) 前向传播（forward pass）：算预测 ——
+    # 隐藏层：先把输入 x 乘权重 W 再加上偏置 b_hidden，然后用 sigmoid 激活。
+    #   x @ W 是矩阵乘法（@ 就是矩阵乘）。
+    #   结果 shape: (4, 2) —— 4 个样本，每个样本得到 2 个隐藏值。
+    hidden = torch.sigmoid(x @ W + b_hidden)
+
+    # 输出层：把隐藏层的 2 个值乘权重 v 再加偏置 b_output，得到「logits」（原始分数）。
+    #   结果 shape: (4, 1) —— 4 个样本，每个样本一个分数。
+    logits = hidden @ v + b_output
+
+    # —— 3) 计算损失（loss）：衡量「预测有多差」——
+    # 用「带 sigmoid 的二分类交叉熵」损失。它等价于：先对 logits 做 sigmoid 得到概率，
+    # 再算交叉熵。但数值上更稳定，所以 PyTorch 推荐直接用这个函数（而不是手写 sigmoid）。
+    #   target 是 0 或 1；logits 是网络算出的分数。差距越大，loss 越大。
+    loss = F.binary_cross_entropy_with_logits(logits, target)
+
+    # —— 4) 反向传播（backward）：自动求梯度 ——
+    # loss.backward() 会从 loss 出发，沿着计算图反向走，
+    # 自动算出每个参数（W、b_hidden、v、b_output）对 loss 的「偏导数」，
+    # 并把这些梯度写进各自的 .grad 属性里。这一步你完全不用手算！
+    loss.backward()
+
+    # —— 5) 更新参数（step）：优化器按梯度调整权重 ——
+    # optimizer.step() 读取每个参数刚算好的 .grad，按 Adam 的规则更新参数值。
+    optimizer.step()
+
+
+# -----------------------------------------------------------------------------
+# ⑤ 训练结束，用「最终参数」做一次评估并打印结果
+# -----------------------------------------------------------------------------
+# torch.no_grad() 表示「接下来不做梯度计算」，评估/预测时加上它更快更省内存，
+# 因为我们不需要再反向传播了。
+with torch.no_grad():
+    hidden = torch.sigmoid(x @ W + b_hidden)   # 用训练好的参数再过一遍前向
+    final_logits = hidden @ v + b_output
+    final_loss = F.binary_cross_entropy_with_logits(final_logits, target)
+
+    probabilities = torch.sigmoid(final_logits)          # 把分数变成 0~1 的概率
+    predictions = (probabilities &gt;= 0.5).to(torch.int64)  # 概率&gt;=0.5 判为 1，否则 0
+    # 检查 4 个样本是否全部预测正确（all 表示「全部都对」才返回 True）
+    correct = torch.all(predictions == target.to(torch.int64)).item()
+
+# 打印最终损失
+print(f&quot;epoch={epoch}, loss={final_loss.item():.4f}&quot;)
+
+# 打印一个好看的表格，逐样本看隐藏值、概率和预测
+print(&quot;x1 x2 | target | hidden (h1, h2) | probability | predicted&quot;)
+for sample, label, hidden_row, probability, prediction in zip(
+    x, target, hidden, probabilities, predictions
+):
+    print(
+        f&quot;{int(sample[0].item())}  {int(sample[1].item())}  |&quot;
+        f&quot;   {int(label[0].item())}    |&quot;
+        f&quot;    ({hidden_row[0].item():.3f}, {hidden_row[1].item():.3f})    |&quot;
+        f&quot;    {probability[0].item():.4f}    |&quot;
+        f&quot;     {prediction[0].item()}&quot;
+    )
+
+# 如果 4 个没全部分对，就直接报错退出（提醒你可能需要更多 epoch）。
+if not correct:
+    raise SystemExit(&quot;XOR was not fully classified; try more epochs.&quot;)
+
+print(&quot;All four XOR samples classified correctly.&quot;)
+</pre></div>
+
+    <h2><span class="num">5</span>运行结果</h2>
+    <p>训练 300 轮后，4 个样本全部分类正确，loss 降到 0.0279：</p>
+    <div class="outbox"><pre>epoch=300, loss=0.0279
+x1 x2 | target | hidden (h1, h2) | probability | predicted
+0  0  |   0    |    (0.030, 0.030)    |    0.0287    |     0
+0  1  |   1    |    (0.000, 0.935)    |    0.9745    |     1
+1  0  |   1    |    (0.935, 0.000)    |    0.9745    |     1
+1  1  |   0    |    (0.034, 0.034)    |    0.0305    |     0
+All four XOR samples classified correctly.</pre></div>
+
+    <h2><span class="num">6</span>给初学者的小结</h2>
+    <ul>
+      <li><b>隐藏层的作用</b>：看输出，隐藏层学会了 (0,1)→h2≈0.935、(1,0)→h1≈0.935，相当于分别记住「两种不一样的情况」，输出层再把它们「或」起来。</li>
+      <li><b>nn.Parameter</b>：把普通张量标记成可学习参数，PyTorch 才会给它算梯度、优化它。</li>
+      <li><b>zero_grad</b>：每轮开始前必须清梯度，否则会累加上一轮的值。</li>
+      <li><b>binary_cross_entropy_with_logits</b>：把「sigmoid + 交叉熵」合成一个数值稳定的函数，二分类标配。</li>
+    </ul>
+
+    <div class="backbar" style="padding-left:0"><span class="backbtn">← 返回作业目录</span></div>
+  </div>
+</div>
+
 
 <script>
 /* ---------- 数据（来自桌面文稿《agent使用感受》） ---------- */
@@ -365,5 +664,36 @@ document.getElementById("enterBtn").addEventListener("click",()=>{
   document.getElementById("hero").classList.add("in");
 });
 </script>
+
+<script>
+/* ===== 作业目录切换逻辑（第二次作业新增） ===== */
+function showView(v){
+  document.querySelectorAll('.view').forEach(function(el){el.classList.remove('active');});
+  var target=document.getElementById(v);
+  if(target) target.classList.add('active');
+  var inHw1=(v==='main');
+  document.getElementById('topbar').style.display = inHw1 ? '' : 'none';
+  document.getElementById('dots').style.display   = inHw1 ? '' : 'none';
+  if(inHw1){ document.querySelectorAll('#main section').forEach(function(s){s.classList.add('in');}); }
+  window.scrollTo(0,0);
+}
+document.querySelectorAll('.hwcard').forEach(function(c){
+  c.addEventListener('click',function(){ showView(c.dataset.view); });
+});
+document.querySelectorAll('.backbtn').forEach(function(b){
+  b.addEventListener('click',function(){ showView('menu'); });
+});
+/* 改写进入按钮：进入后显示作业目录，而非直接滚到报告 */
+(function(){
+  var btn=document.getElementById('enterBtn');
+  if(!btn) return;
+  btn.addEventListener('click',function(){
+    document.getElementById('intro').classList.add('hide');
+    setTimeout(function(){document.getElementById('intro').style.display='none';},950);
+    showView('menu');
+  });
+})();
+</script>
+
 </body>
 </html>
