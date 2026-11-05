@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -184,11 +183,11 @@
 <div id="intro">
   <canvas id="particles"></canvas>
   <div class="intro-inner">
-    <div class="intro-kicker">AI AGENT · 使用实践报告</div>
-    <div class="intro-title">2662404067金乐添 的ai agent使用报告</div>
+    <div class="intro-kicker">课程作业 · 在线提交</div>
+    <div class="intro-title">2662404067 金乐添 的作业提交</div>
     <div class="intro-sub" id="typed"></div>
-    <button class="intro-btn" id="enterBtn">进入报告 →</button>
-    <div class="intro-hint">点击按钮，开启交互式阅读</div>
+    <button class="intro-btn" id="enterBtn">进入作业 →</button>
+    <div class="intro-hint">点击按钮，查看各次作业</div>
   </div>
 </div>
 
@@ -653,7 +652,7 @@ window.addEventListener("scroll",()=>{document.getElementById("topbar").classLis
 })();
 /* 打字机 */
 (function(){
-  const txt="三个 Agent · 真实任务 · 结果与感受";
+  const txt="第一次 · Agent 使用报告　第二次 · PyTorch XOR 解析";
   const el=document.getElementById("typed");let i=0;
   const t=setInterval(()=>{el.textContent=txt.slice(0,++i);if(i>=txt.length)clearInterval(t);},70);
 })();
