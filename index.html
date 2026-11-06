@@ -677,6 +677,299 @@ All four XOR samples classified correctly.</pre></div>
     <div id="fwdOut" class="fwd-out"></div>
     <p class="tl-note">每一步其实都只是「乘权重 + 加偏置，再过一个 sigmoid 压到 0~1」。你看懂这一步，整段程序就通了。</p>
 
+
+    <!-- ============ 第八节：今天问过的那些问题（已去重、已提炼） ============ -->
+    <h2><span class="num">8</span>今天问过的那些问题 · 精华问答与可视化</h2>
+    <p class="lead">下面把今天整段对话里反复出现的疑问<b>去重、提炼</b>成 9 个核心问题。点开任意一条即可看图解，底部还附了「两层方案」与「单层二次方案」在原始输入空间的分界线对比，以及你要的<b>零 sigmoid</b> PyTorch 代码。</p>
+
+    <div class="qa-intro">
+      <b>一句话总览：</b>XOR 的难点是<b>线性不可分</b>——难点在「非线性」，不在「必须两层」。2-2-1 网络靠<b>隐藏层把点重映射到新空间</b>再用直线分开；单层二次函数靠<b>特征里带 x₁·x₂ 交互项</b>也能分开。两条路都能解，参数还更少。
+    </div>
+
+    <!-- 两种方案分界线对比（核心可视化） -->
+    <h3>① 两种方案在原始输入空间的分界线对比</h3>
+    <p>左图是作业里 2-2-1 sigmoid 网络学到的分界线（<b>弯曲的十字</b>，非线性带来）；右图是下面第 7 问那种「单层二次函数」的分界线（<b>笔直的十字</b>）。两者都能把红(0)/绿(1) 分开，但一条是曲线、一条是直线。</p>
+    <div class="qa-cmp">
+      <div class="qa-card">
+        <h4>方案 A · 2-2-1 sigmoid 网络</h4>
+        <svg viewBox="0 0 300 220" width="100%">
+          <rect x="30" y="20" width="240" height="180" fill="#fff" stroke="#e2e8f0"/>
+          <path d="M30,20 Q90,30 110,90 Q60,70 30,110 Z" fill="#dcfce7" opacity="0.85"/>
+          <path d="M270,200 Q210,190 190,130 Q240,150 270,110 Z" fill="#dcfce7" opacity="0.85"/>
+          <path d="M30,200 Q90,190 110,130 Q60,150 30,110 Z" fill="#fee2e2" opacity="0.85"/>
+          <path d="M270,20 Q210,30 190,90 Q240,70 270,110 Z" fill="#fee2e2" opacity="0.85"/>
+          <path d="M30,110 Q90,80 150,110 Q210,140 270,110" fill="none" stroke="#6366f1" stroke-width="3"/>
+          <path d="M150,20 Q120,90 150,110 Q180,130 150,200" fill="none" stroke="#6366f1" stroke-width="3"/>
+          <circle cx="40" cy="190" r="8" fill="#ef4444"/><text x="44" y="206" font-size="10" fill="#475569">00</text>
+          <circle cx="40" cy="30" r="8" fill="#22c55e"/><text x="44" y="26" font-size="10" fill="#475569">01</text>
+          <circle cx="260" cy="190" r="8" fill="#22c55e"/><text x="244" y="206" font-size="10" fill="#475569">10</text>
+          <circle cx="260" cy="30" r="8" fill="#ef4444"/><text x="244" y="26" font-size="10" fill="#475569">11</text>
+        </svg>
+        <div class="cap">分界线是<b>两条弧线</b>（非线性，来自隐藏层 sigmoid）。</div>
+      </div>
+      <div class="qa-card">
+        <h4>方案 B · 单层二次函数（无 sigmoid）</h4>
+        <svg viewBox="0 0 300 220" width="100%">
+          <rect x="30" y="20" width="240" height="180" fill="#fff" stroke="#e2e8f0"/>
+          <path d="M30,20 L150,20 L150,110 L30,110 Z" fill="#dcfce7" opacity="0.7"/>
+          <path d="M150,110 L270,110 L270,200 L150,200 Z" fill="#dcfce7" opacity="0.7"/>
+          <path d="M150,20 L270,20 L270,110 L150,110 Z" fill="#fee2e2" opacity="0.7"/>
+          <path d="M30,110 L150,110 L150,200 L30,200 Z" fill="#fee2e2" opacity="0.7"/>
+          <line x1="150" y1="20" x2="150" y2="200" stroke="#6366f1" stroke-width="3"/>
+          <line x1="30" y1="110" x2="270" y2="110" stroke="#6366f1" stroke-width="3"/>
+          <circle cx="40" cy="190" r="8" fill="#ef4444"/><text x="44" y="206" font-size="10" fill="#475569">00</text>
+          <circle cx="40" cy="30" r="8" fill="#22c55e"/><text x="44" y="26" font-size="10" fill="#475569">01</text>
+          <circle cx="260" cy="190" r="8" fill="#22c55e"/><text x="244" y="206" font-size="10" fill="#475569">10</text>
+          <circle cx="260" cy="30" r="8" fill="#ef4444"/><text x="244" y="26" font-size="10" fill="#475569">11</text>
+        </svg>
+        <div class="cap">分界线是<b>笔直的十字</b>：x₁=0.5 与 x₂=0.5（来自 −2(x₁−0.5)(x₂−0.5)=0）。</div>
+      </div>
+    </div>
+
+    <!-- 交互式问答手风琴 -->
+    <h3>② 点开看每一条疑问的图解</h3>
+    <div class="faq">
+      <div class="faq-item">
+        <button class="faq-q"><span><span class="qtag">Q1</span>为什么一条直线分不开 XOR？</span><span class="mk">+</span></button>
+        <div class="faq-a">
+          <p>在输入空间里，4 个样本其实是「两条对角线」上的点：<b>00 和 11</b> 是红色（答案 0），<b>01 和 10</b> 是绿色（答案 1）。红、绿分别落在两条<b>交叉的对角线</b>上——任何一条直线，只要把一条对角线分到正确一侧，就一定会把另一条对角线也切到同一侧，导致至少一个点错。所以单一直线无解，这就是「线性不可分」。</p>
+          <div class="qa-card" style="margin-top:10px">
+            <svg viewBox="0 0 300 220" width="100%">
+              <line x1="40" y1="180" x2="270" y2="180" stroke="#cbd5e1"/>
+              <line x1="40" y1="180" x2="40" y2="20" stroke="#cbd5e1"/>
+              <text x="245" y="200" fill="#94a3b8" font-size="11">x1 →</text>
+              <text x="14" y="28" fill="#94a3b8" font-size="11">x2 ↑</text>
+              <line x1="155" y1="20" x2="155" y2="180" stroke="#f59e0b" stroke-width="2" stroke-dasharray="6 5"/>
+              <line x1="40" y1="100" x2="270" y2="100" stroke="#f59e0b" stroke-width="2" stroke-dasharray="6 5"/>
+              <text x="160" y="36" fill="#f59e0b" font-size="10">竖线？</text>
+              <text x="46" y="94" fill="#f59e0b" font-size="10">横线？</text>
+              <circle cx="80" cy="150" r="11" fill="#ef4444"/><text x="94" y="154" font-size="12" fill="#475569">00</text>
+              <circle cx="80" cy="50" r="11" fill="#22c55e"/><text x="94" y="54" font-size="12" fill="#475569">01</text>
+              <circle cx="230" cy="150" r="11" fill="#22c55e"/><text x="244" y="154" font-size="12" fill="#475569">10</text>
+              <circle cx="230" cy="50" r="11" fill="#ef4444"/><text x="244" y="54" font-size="12" fill="#475569">11</text>
+              <text x="40" y="210" fill="#64748b" font-size="11">红=0，绿=1；它们分布在两条对角线上，画不出一条线分开</text>
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-q"><span><span class="qtag">Q2</span>为什么非得有隐藏层 + 非线性？</span><span class="mk">+</span></button>
+        <div class="faq-a">
+          <p>一层「线性 + sigmoid」本质还是一条直线（sigmoid 只是把分数压成概率，不改变「用一条直线分割」这件事），照样分不开 XOR。隐藏层的真正作用，是把 4 个点<b>重新映射</b>到一个新空间 (h₁,h₂)，在那里它们变得可以用一条直线分开——h₁、h₂ 就是网络自己学到的「特征」。</p>
+          <p>没有非线性（如 sigmoid、tanh、ReLU），两层线性叠起来就等于一层线性（见 Q5 的塌缩说明），多加的层毫无意义。</p>
+          <div class="qa-card" style="margin-top:10px">
+            <svg viewBox="0 0 300 220" width="100%">
+              <line x1="40" y1="180" x2="270" y2="180" stroke="#cbd5e1"/>
+              <line x1="40" y1="180" x2="40" y2="20" stroke="#cbd5e1"/>
+              <text x="245" y="200" fill="#94a3b8" font-size="11">h1 →</text>
+              <text x="14" y="28" fill="#94a3b8" font-size="11">h2 ↑</text>
+              <line x1="40" y1="100" x2="150" y2="180" stroke="#6366f1" stroke-width="2.5"/>
+              <text x="78" y="150" fill="#6366f1" font-size="11">h1+h2=0.5</text>
+              <circle cx="51" cy="176" r="10" fill="#ef4444"/><text x="60" y="180" font-size="11" fill="#475569">00</text>
+              <circle cx="62" cy="164" r="10" fill="#ef4444"/><text x="71" y="168" font-size="11" fill="#475569">11</text>
+              <circle cx="47" cy="33" r="10" fill="#22c55e"/><text x="56" y="37" font-size="11" fill="#475569">01</text>
+              <circle cx="242" cy="175" r="10" fill="#22c55e"/><text x="205" y="172" font-size="11" fill="#475569">10</text>
+              <text x="40" y="212" fill="#64748b" font-size="11">到了隐藏空间，两个红点挤在原点附近，绿点跑到坐标轴两端 → 一条线就分开了</text>
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-q"><span><span class="qtag">Q3</span>空间映射把 4 个点变成什么样了？（我没把 4 个变 3 个）</span><span class="mk">+</span></button>
+        <div class="faq-a">
+          <p>点一个没少，是「<b>挪了位置</b>」。用训好的权重算：</p>
+          <ul>
+            <li>00 → (0.03, 0.03)，11 → (0.034, 0.034)：都挤到原点附近（所以你看着像「重叠」）；</li>
+            <li>01 → (0, 0.935)，10 → (0.935, 0)：分别跑到坐标轴两端。</li>
+          </ul>
+          <p>原来在输入空间里交叉的对角线，到了隐藏空间被「掰开」成：两个红点叠在角落、两个绿点分别跑到坐标轴两端——于是画一条 h₁+h₂=0.5 就分开了。</p>
+          <div class="qa-card" style="margin-top:10px">
+            <svg viewBox="0 0 380 200" width="100%">
+              <text x="20" y="20" font-size="12" fill="#475569" font-weight="700">输入空间 (x1,x2)</text>
+              <text x="250" y="20" font-size="12" fill="#475569" font-weight="700">隐藏空间 (h1,h2)</text>
+              <circle cx="45" cy="150" r="9" fill="#ef4444"/><text x="56" y="154" font-size="10" fill="#475569">00</text>
+              <circle cx="45" cy="60" r="9" fill="#22c55e"/><text x="56" y="64" font-size="10" fill="#475569">01</text>
+              <circle cx="115" cy="150" r="9" fill="#22c55e"/><text x="126" y="154" font-size="10" fill="#475569">10</text>
+              <circle cx="115" cy="60" r="9" fill="#ef4444"/><text x="126" y="64" font-size="10" fill="#475569">11</text>
+              <circle cx="255" cy="155" r="9" fill="#ef4444"/><text x="266" y="159" font-size="10" fill="#475569">00</text>
+              <circle cx="268" cy="142" r="9" fill="#ef4444"/><text x="279" y="146" font-size="10" fill="#475569">11</text>
+              <circle cx="252" cy="50" r="9" fill="#22c55e"/><text x="263" y="54" font-size="10" fill="#475569">01</text>
+              <circle cx="330" cy="155" r="9" fill="#22c55e"/><text x="270" y="172" font-size="10" fill="#475569">10</text>
+              <path d="M54,145 C 150,120 160,140 250,150" stroke="#cbd5e1" fill="none" marker-end="url(#mC)"/>
+              <path d="M124,65 C 180,90 200,120 262,140" stroke="#cbd5e1" fill="none" marker-end="url(#mC)"/>
+              <path d="M54,55 C 150,30 160,55 250,48" stroke="#cbd5e1" fill="none" marker-end="url(#mC)"/>
+              <path d="M124,145 C 200,150 260,150 325,152" stroke="#cbd5e1" fill="none" marker-end="url(#mC)"/>
+              <defs><marker id="mC" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#cbd5e1"/></marker></defs>
+            </svg>
+            <div class="cap">00 与 11 的箭头都收拢到原点附近，所以「看着像少了一个点」，其实只是重叠。</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-q"><span><span class="qtag">Q4</span>为什么不把点推到角落 / 推到极端，而是压到接近原点？</span><span class="mk">+</span></button>
+        <div class="faq-a">
+          <p>你设想的是「把 00、11 推到左下角，01、10 推到右上角，再画 y=−x+1」。这在数学上做不到，原因有两层：</p>
+          <ul>
+            <li><b>线性映射是「刚体式」的</b>：(1,1) 的像 = (1,0) 的像 + w₂₁ 那一项，会把 (1,1) 也拽向同一个角落，反而和 (1,0) 撞在一起；</li>
+            <li><b>sigmoid 把 h 锁死在 (0,1)</b>：它没法跑到「方块外面」的极端坐标。模型其实在 z（加权输入）空间把点推得很远（例如某个 z 达到 −9.49），只是经过 sigmoid 后都收拢到接近 0 或 1。</li>
+          </ul>
+          <p>结论：不是不想推远，是 sigmoid 把输出「夹」在了 0~1 之间（见 Q5 图）。</p>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-q"><span><span class="qtag">Q5</span>sigmoid 长什么样、为什么出现两次？为什么没有它两层就塌成一层？</span><span class="mk">+</span></button>
+        <div class="faq-a">
+          <p>图像是一条 S 形曲线，把任意实数压到 (0,1)，z=0 时正好 0.5。它出现两次，作用不同：</p>
+          <ul>
+            <li><b>隐藏层那次</b>——注入非线性，这是 XOR 能学会的关键；</li>
+            <li><b>输出层那次</b>（以对数几率形式，配 BCE 损失）——把分数变成概率。</li>
+          </ul>
+          <p>如果没有隐藏层的非线性，两层线性会叠成一层：y = 3·(2x+1)+4 = 6x+7。多加的层毫无意义，仍然是一条直线，分不开 XOR。</p>
+          <div class="qa-card" style="margin-top:10px">
+            <svg viewBox="0 0 300 200" width="100%">
+              <line x1="30" y1="160" x2="285" y2="160" stroke="#cbd5e1"/>
+              <line x1="150" y1="20" x2="150" y2="175" stroke="#cbd5e1"/>
+              <text x="262" y="178" fill="#94a3b8" font-size="11">z →</text>
+              <text x="8" y="30" fill="#94a3b8" font-size="11">σ(z)</text>
+              <path d="M30,150 C 100,150 120,95 150,95 C 180,95 200,35 285,33" fill="none" stroke="#a855f7" stroke-width="3"/>
+              <line x1="30" y1="160" x2="285" y2="160" stroke="#fca5a5" stroke-width="1" stroke-dasharray="3 3"/>
+              <line x1="30" y1="33" x2="285" y2="33" stroke="#fca5a5" stroke-width="1" stroke-dasharray="3 3"/>
+              <line x1="150" y1="20" x2="150" y2="160" stroke="#fde68a" stroke-width="2" stroke-dasharray="5 4"/>
+              <text x="156" y="90" fill="#b45309" font-size="11">σ=0.5 当 z=0</text>
+              <text x="200" y="40" fill="#a855f7" font-size="11">→ 1</text>
+              <text x="40" y="40" fill="#a855f7" font-size="11">→ 0</text>
+            </svg>
+            <div class="cap">sigmoid 把输出夹在 (0,1)：既能注入非线性，也顺手把输出变成概率。</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-q"><span><span class="qtag">Q6</span>反向传播：链条越长，梯度就越小吗？</span><span class="mk">+</span></button>
+        <div class="faq-a">
+          <p><b>不一定。</b>灵魂公式（整个反向传播的核心）：对二分类，损失对输出分数的梯度 = 预测概率 − 真实标签，即</p>
+          <div class="mini"><b>∂L/∂logit = p − target</b></div>
+          <p>然后链式法则往回传：</p>
+          <div class="mini">∂L/∂hⱼ = (∂L/∂logit)·vⱼ<br>∂L/∂Wᵢⱼ = (∂L/∂hⱼ)·hⱼ(1−hⱼ)·xᵢ</div>
+          <p>「越靠前的层链条越长」没错，但梯度大小要看每一步<b>因子的乘积</b>，不单看链长。sigmoid 导数 h(1−h) 最大只有 0.25（这是梯度消失的来源之一），但如果后面乘的 v 等因子很大，前面的梯度照样可能不小。所以「链条长 ≠ 梯度一定小」。</p>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-q"><span><span class="qtag">Q7</span>能不能不用 sigmoid、只用一个二次函数一层搞定？</span><span class="mk">+</span></button>
+        <div class="faq-a">
+          <p><b>能。</b>XOR 难在「线性不可分」，难点是「非线性」，<b>不是「必须两层」</b>。只要特征里有 x₁·x₂ 这种交互项，一层线性就够：</p>
+          <div class="mini"><b>f = a·x₁ + b·x₂ + c·(x₁x₂) + d</b></div>
+          <p>训练后学到 a=b=1、c=−2、d=0，即 <b>f = x₁+x₂−2x₁x₂</b>，正好 4 点全对。参数只有 <b>3~4 个</b>（比 2-2-1 的 9 个还少）。</p>
+          <p>它在原始输入空间的分界线是「<b>笔直的十字</b>」：由 x₁+x₂−2x₁x₂ = −2(x₁−0.5)(x₂−0.5) = 0 分解出 x₁=0.5 与 x₂=0.5 两条直的交线（见本节顶部对比图右）。</p>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-q"><span><span class="qtag">Q8</span>这到底是机器学习还是深度学习？</span><span class="mk">+</span></button>
+        <div class="faq-a">
+          <p>包含关系：<b>机器学习 ⊃ 神经网络 ⊃ 深度学习</b>。本次的 2-2-1 网络属于「神经网络」，但只有 2 层（一个隐藏层），够不上「深」，所以它是神经网络的入门例子、深度学习的「前身」，而不是严格意义上的深度学习。</p>
+          <div class="qa-card" style="margin-top:10px">
+            <svg viewBox="0 0 340 210" width="100%">
+              <rect x="20" y="30" width="300" height="140" rx="16" fill="#eef2ff" stroke="#c7d2fe"/>
+              <text x="34" y="52" font-size="13" fill="#4338ca" font-weight="800">机器学习 ML</text>
+              <rect x="60" y="65" width="220" height="85" rx="13" fill="#faf5ff" stroke="#ddd6fe"/>
+              <text x="74" y="86" font-size="12.5" fill="#7c3aed" font-weight="800">神经网络 NN</text>
+              <rect x="95" y="98" width="150" height="42" rx="10" fill="#fff7ed" stroke="#fed7aa"/>
+              <text x="109" y="124" font-size="12" fill="#d97706" font-weight="800">深度学习 DL</text>
+              <circle cx="272" cy="82" r="6" fill="#ef4444"/>
+              <text x="30" y="200" font-size="11" fill="#475569">● 红点 = 本次 XOR 2-2-1：属于神经网络，但还够不上「深」</text>
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-q"><span><span class="qtag">Q9</span>零 sigmoid 的 PyTorch 实现（你要的那段代码）</span><span class="mk">+</span></button>
+        <div class="faq-a">
+          <p>按你的要求：<b>全程不写任何 sigmoid</b>，手工构造二次特征 x₁·x₂，用一层线性 + 均方误差直接拟合 0/1，最后用 0.5 当阈值判断。</p>
+          <div class="codebox"><pre>import torch, torch.nn as nn, torch.optim as optim
+
+# 四个 XOR 样本
+X = torch.tensor([[0.,0.],[0.,1.],[1.,0.],[1.,1.]])
+Y = torch.tensor([[0.],[1.],[1.],[0.]])
+
+# 关键：手工构造「二次特征」x1*x2，不写任何 sigmoid
+x1 = X[:,0:1]; x2 = X[:,1:2]
+X_feat = torch.cat([x1, x2, x1*x2], dim=1)   # 形状 (4,3)
+
+# 一层线性：y = a*x1 + b*x2 + c*(x1*x2) + d
+model = nn.Linear(3, 1)
+
+# 直接拿「原始分数」和 0/1 比均方误差，全程零 sigmoid
+criterion = nn.MSELoss()
+optimizer = optim.Adam(model.parameters(), lr=0.1)
+
+for epoch in range(2000):
+    optimizer.zero_grad()
+    logit = model(X_feat)
+    loss = criterion(logit, Y)
+    loss.backward()
+    optimizer.step()
+
+with torch.no_grad():
+    logit = model(X_feat)
+    pred = (logit &gt;= 0.5).float()   # 用 0.5 当阈值，不靠 sigmoid
+
+print("参数 a,b,c,d =", model.weight[0].tolist(), model.bias.tolist())
+print("预测 =", pred.flatten().tolist())   # -&gt; [0,1,1,0] 全对</pre></div>
+          <p class="tl-note">跑出来会得到 a=1.0、b=1.0、c=−2.0、d=0.0，正好是 f = x₁+x₂−2x₁x₂，4 点全部分类正确——和你手推的公式一模一样。</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="note" style="background:#eef2ff;border-color:#c7d2fe;border-left-color:#4f46e5;color:#3730a3">
+      <b>给未来复习的自己：</b>记住三句话就够了——① XOR 线性不可分，一条线分不开；② 隐藏层是把点「挪」到新空间再直线分开，没有非线性两层就白加；③ 难点是「非线性」不是「两层」，所以单层带 x₁x₂ 的二次函数也能解，而且参数更少。
+    </div>
+
+    <script>
+    (function(){
+      var qs = document.querySelectorAll('#hw2 .faq-q');
+      qs.forEach(function(btn){
+        btn.addEventListener('click', function(){
+          var item = btn.parentElement;
+          var open = item.classList.toggle('open');
+          var mk = btn.querySelector('.mk');
+          if(mk) mk.textContent = open ? '−' : '+';
+        });
+      });
+    })();
+    </script>
+
+<style>
+#hw2 .s8{}
+.qa-intro{background:#f0fdf4;border:1px solid #bbf7d0;border-left:5px solid #22c55e;border-radius:14px;padding:16px 18px;margin:18px 0;font-size:15px;color:#166534;line-height:1.9}
+.qa-intro b{color:#14532d}
+.qa-cmp{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:16px 0}
+@media(max-width:680px){.qa-cmp{grid-template-columns:1fr}}
+.qa-card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:14px 14px 10px;box-shadow:0 6px 18px rgba(15,23,42,.05)}
+.qa-card h4{margin:0 0 6px;font-size:15px;color:#4f46e5}
+.qa-card .cap{font-size:12.5px;color:#64748b;line-height:1.6;margin-top:6px}
+.faq{margin:22px 0;border-radius:16px;overflow:hidden;border:1px solid var(--line)}
+.faq-item{border-bottom:1px solid var(--line);background:#fff}
+.faq-item:last-child{border-bottom:none}
+.faq-q{width:100%;text-align:left;background:none;border:none;cursor:pointer;padding:16px 18px;font-size:15.5px;font-weight:700;color:#1e293b;display:flex;align-items:center;gap:10px;font-family:inherit}
+.faq-q:hover{background:#f8fafc}
+.faq-q .mk{margin-left:auto;transition:transform .25s;color:#94a3b8;font-size:20px;line-height:1}
+.faq-item.open .faq-q .mk{color:#4f46e5}
+.faq-a{max-height:0;overflow:hidden;transition:max-height .4s ease;padding:0 18px}
+.faq-item.open .faq-a{max-height:2600px;padding-bottom:16px}
+.faq-a p{font-size:14.5px;color:#374151;line-height:1.85;margin:8px 0}
+.faq-a ul{font-size:14.5px;color:#374151;line-height:1.85;margin:8px 0 8px 22px}
+.mini{background:#f8fafc;border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:10px 0;font-size:13.5px;color:#334155;line-height:1.8}
+.mini b{color:#4338ca}
+.qtag{display:inline-block;font-size:11px;font-weight:800;color:#fff;background:var(--claude);border-radius:6px;padding:2px 8px}
+</style>
+
 <div class="backbar" style="padding-left:0"><span class="backbtn">← 返回作业目录</span></div>
   </div>
 </div>
