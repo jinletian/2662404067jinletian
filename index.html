@@ -386,6 +386,15 @@
 .v3-dots b{width:10px;height:10px;border-radius:50%;background:#1e293b;display:block;cursor:pointer;transition:.15s}
 .v3-dots b.on{background:#38bdf8;box-shadow:0 0 8px #38bdf8}
 .v3-hint{font-size:11.5px;color:#64748b;margin-top:10px;text-align:center}
+
+.v3-where{font-size:13px;font-weight:800;color:#0b1020;background:#fbbf24;border-radius:8px;padding:5px 12px;white-space:nowrap;font-variant-numeric:tabular-nums}
+.v3-where b{color:#7c2d12}
+.v3-hud{position:absolute;left:50%;top:12px;transform:translateX(-50%);z-index:5;pointer-events:none;
+        background:rgba(251,191,36,.95);color:#1f2937;font:800 14px ui-monospace,Menlo,monospace;
+        padding:7px 16px;border-radius:999px;box-shadow:0 6px 18px rgba(0,0,0,.4);white-space:nowrap}
+.v3-ring{position:absolute;transform:translate(-50%,-50%);pointer-events:none;border:3px solid #fbbf24;border-radius:50%;
+         width:78px;height:78px;box-shadow:0 0 18px rgba(251,191,36,.8),inset 0 0 14px rgba(251,191,36,.5)}
+
 </style>
 
     <h2><span class="num">★</span>先看这里：你就是那份数据，跟着它走完整个学习过程</h2>
@@ -394,16 +403,20 @@
     <div class="v3" id="v3">
       <div class="v3-top">
         <span class="v3-tag" id="v3Tag">FORWARD · 算 z₁、h₁</span>
+        <span class="v3-where" id="v3Where">📍 你在 <b>x2</b> → 前往 h1</span>
         <span class="v3-epoch" id="v3Epoch">样本 01 → 1 · 第 1/6 次更新</span>
         <span class="v3-sp"></span>
         <button class="v3-btn on" id="v3Play">⏸ 暂停</button>
         <button class="v3-btn" id="v3Replay">↻ 重播</button>
         <button class="v3-btn" id="v3Speed">速度 1×</button>
+        <button class="v3-btn on" id="v3View">视角：第一人称</button>
       </div>
       <div class="v3-body">
         <div class="v3-stage" id="v3Stage">
           <canvas id="v3Canvas" width="940" height="560"></canvas>
           <div class="v3-labels" id="v3Labels"></div>
+          <div class="v3-hud" id="v3Hud">📍 现在在 x2</div>
+          <div class="v3-ring" id="v3Ring" style="display:none"></div>
         </div>
         <div class="v3-panel">
           <h4 id="v3Title">正在算什么</h4>
@@ -413,7 +426,7 @@
           <div class="v3-dots" id="v3Dots"></div>
         </div>
       </div>
-      <div class="v3-hint">镜头 = 数据本人的视角 · 画面固定不旋转 · 点小圆点 = 跳到某次更新</div>
+      <div class="v3-hint">第一人称 = 你是数据 · 全局视角 = 拖动旋转/滚轮缩放看全景 · 金色圆圈 = 你现在的位置 · 点小圆点跳步</div>
     </div>
 <script src="three.min.js"></script>
 <script>
@@ -426,6 +439,7 @@
   var eqEl=document.getElementById('v3Eq'), titleEl=document.getElementById('v3Title');
   var bar=document.getElementById('v3Bar'), dotsBox=document.getElementById('v3Dots');
   var playBtn=document.getElementById('v3Play'), replayBtn=document.getElementById('v3Replay'), speedBtn=document.getElementById('v3Speed');
+  var viewBtn=document.getElementById('v3View'), whereEl=document.getElementById('v3Where'), hudEl=document.getElementById('v3Hud'), ringEl=document.getElementById('v3Ring');
 
   var W=cv.width,H=cv.height;
   var renderer=new THREE.WebGLRenderer({canvas:cv,antialias:true,alpha:false});
@@ -445,6 +459,18 @@
     camera.position.copy(camPos); camera.lookAt(camLook);
   }
   cam([-5,1.9,0],[0,2.1,-1.6],0);
+  var viewMode='fp', theta=0.0, phi=0.22, orbitR=17, dragging=false, mx=0, my=0;
+  function camOrbit(){camera.position.set(orbitR*Math.sin(theta)*Math.cos(phi),orbitR*Math.sin(phi),orbitR*Math.cos(theta)*Math.cos(phi));camera.lookAt(0,0,0);}
+  stage.addEventListener('mousedown',function(e){if(viewMode!=='global')return;dragging=true;mx=e.clientX;my=e.clientY;});
+  window.addEventListener('mouseup',function(){dragging=false;});
+  window.addEventListener('mousemove',function(e){if(!dragging||viewMode!=='global')return;theta-=(e.clientX-mx)*0.007;phi=Math.max(-0.7,Math.min(0.9,phi+(e.clientY-my)*0.006));mx=e.clientX;my=e.clientY;});
+  stage.addEventListener('wheel',function(e){if(viewMode!=='global')return;e.preventDefault();orbitR=Math.max(9,Math.min(34,orbitR+e.deltaY*0.012));},{passive:false});
+  viewBtn.addEventListener('click',function(){
+    viewMode=(viewMode==='fp')?'global':'fp';
+    viewBtn.textContent=viewMode==='fp'?'视角：第一人称':'视角：全局（可拖动）';
+    viewBtn.classList.toggle('on',viewMode==='fp');
+    camInit=false;
+  });
 
   scene.add(new THREE.AmbientLight(0xffffff,0.55));
   var pl=new THREE.PointLight(0x7dd3fc,1.2); pl.position.set(-6,8,10); scene.add(pl);
@@ -615,8 +641,23 @@
     pk.position.set(A[0]+(Bp[0]-A[0])*ee,A[1]+(Bp[1]-A[1])*ee,A[2]+(Bp[2]-A[2])*ee);
     pkHalo.material.color.setHex(beat.col);
     pk.scale.setScalar(bi===7?1.25:1);
-    Object.keys(nodeMesh).forEach(function(k){nodeMesh[k].material.emissiveIntensity=(route.indexOf(k)>=0)?0.8:0.42;});
-    cam(A,Bp,ee);
+    var here=route[Math.min(route.length-1,idx+(ee>0.5?1:0))];
+    var next=route[Math.min(route.length-1,idx+1)];
+    whereEl.innerHTML='📍 你在 <b>'+here+'</b>'+(next!==here?(' → 前往 '+next):'');
+    hudEl.textContent='📍 现在在 '+here+' · '+beat.tag.split(' · ')[0];
+    Object.keys(nodeMesh).forEach(function(k){
+      var isHere=(k===here);
+      nodeMesh[k].material.emissiveIntensity=isHere?1.0:(route.indexOf(k)>=0?0.75:0.38);
+      nodeMesh[k].scale.setScalar(isHere?1.45:1);
+    });
+    if(viewMode==='fp') cam(A,Bp,ee); else camOrbit();
+    // ring around current node (project AFTER camera update so it tracks)
+    var pv=new THREE.Vector3(POS[here][0],POS[here][1],POS[here][2]).project(camera);
+    if(pv.z<1 && pv.z>-1){
+      ringEl.style.display='block';
+      ringEl.style.left=((pv.x*.5+.5)*100)+'%';
+      ringEl.style.top=((-pv.y*.5+.5)*100)+'%';
+    } else {ringEl.style.display='none';}
     renderer.render(scene,camera);
     requestAnimationFrame(frame);
   }
