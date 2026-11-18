@@ -353,6 +353,280 @@
       <b>作者说明：</b>这是我让agent对这段pytorch内的代码进行的解析，但是无论我怎么理解，都依然看不懂。
     </div>
 
+<style>
+.v3{background:#080d1a;border:1px solid #1e293b;border-radius:20px;padding:18px;margin:24px 0;box-shadow:0 16px 40px rgba(15,23,42,.3);overflow:hidden}
+.v3-top{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:2px 4px 14px}
+.v3-tag{font-size:13px;font-weight:800;letter-spacing:.5px;color:#7dd3fc;background:rgba(56,189,248,.12);border:1px solid rgba(56,189,248,.35);border-radius:8px;padding:5px 12px;min-width:150px;text-align:center}
+.v3-epoch{font-size:13px;color:#fbbf24;font-weight:800;font-variant-numeric:tabular-nums}
+.v3-sp{flex:1}
+.v3-btn{background:#131b30;color:#cbd5e1;border:1px solid #273349;border-radius:8px;font-size:12.5px;font-weight:700;padding:6px 12px;cursor:pointer;transition:.15s}
+.v3-btn:hover{background:#1e293b;color:#fff}
+.v3-btn.on{background:#3730a3;border-color:#6366f1;color:#fff}
+.v3-body{display:grid;grid-template-columns:1.55fr 1fr;gap:14px}
+@media(max-width:860px){.v3-body{grid-template-columns:1fr}}
+.v3-stage{position:relative;background:#060a14;border:1px solid #1e293b;border-radius:14px;overflow:hidden;aspect-ratio:940/560}
+.v3-stage canvas{display:block;width:100%;height:100%}
+.v3-labels{position:absolute;inset:0;pointer-events:none}
+.v3-node{position:absolute;transform:translate(-50%,-50%);text-align:center;white-space:nowrap}
+.v3-node .nm{font:800 12px ui-monospace,Menlo,monospace;color:#e2e8f0;text-shadow:0 0 8px #000,0 0 4px #000}
+.v3-node .vl{font:700 12px ui-monospace,Menlo,monospace;color:#7dd3fc;text-shadow:0 0 8px #000}
+.v3-edge{position:absolute;transform:translate(-50%,-50%);font:700 11px ui-monospace,Menlo,monospace;color:#93c5fd;text-shadow:0 0 6px #000,0 0 3px #000}
+.v3-panel{background:#0d1426;border:1px solid #1e293b;border-radius:14px;padding:14px;min-height:360px;display:flex;flex-direction:column}
+.v3-panel h4{font-size:14px;color:#fbbf24;margin:0 0 3px;font-weight:800}
+.v3-panel .psub{font-size:11.5px;color:#64748b;margin-bottom:10px}
+.v3-eq{background:#111a2e;border:1px solid #22304a;border-radius:10px;padding:11px 12px;font:600 12.5px/1.9 ui-monospace,Menlo,Consolas,monospace;color:#cbd5e1;white-space:pre-wrap;word-break:break-word;flex:1}
+.v3-eq .hl{color:#fbbf24;font-weight:800}
+.v3-eq .bl{color:#7dd3fc;font-weight:800}
+.v3-eq .rd{color:#f87171;font-weight:800}
+.v3-eq .gr{color:#4ade80;font-weight:800}
+.v3-eq .dim{color:#64748b}
+.v3-bar{height:5px;background:#111827;border-radius:99px;margin-top:12px;overflow:hidden}
+.v3-bar i{display:block;height:100%;background:linear-gradient(90deg,#38bdf8,#a78bfa,#f87171);width:0%;border-radius:99px;transition:width .08s linear}
+.v3-dots{display:flex;gap:6px;margin-top:9px;flex-wrap:wrap}
+.v3-dots b{width:10px;height:10px;border-radius:50%;background:#1e293b;display:block;cursor:pointer;transition:.15s}
+.v3-dots b.on{background:#38bdf8;box-shadow:0 0 8px #38bdf8}
+.v3-hint{font-size:11.5px;color:#64748b;margin-top:10px;text-align:center}
+</style>
+
+    <h2><span class="num">★</span>先看这里：你就是那份数据，跟着它走完整个学习过程</h2>
+    <p class="lead">这是一段<b>第一人称</b>动画：镜头就是那个数据本身，带你依次穿过输入层、隐藏层、输出层，再倒回来把误差送回去、修改权重。镜头固定不晃，右边面板同步把<b>每一步的算式、梯度的来源、参数改了多少</b>全写出来。数字都来自真实训练。</p>
+
+    <div class="v3" id="v3">
+      <div class="v3-top">
+        <span class="v3-tag" id="v3Tag">FORWARD · 算 z₁、h₁</span>
+        <span class="v3-epoch" id="v3Epoch">样本 01 → 1 · 第 1/6 次更新</span>
+        <span class="v3-sp"></span>
+        <button class="v3-btn on" id="v3Play">⏸ 暂停</button>
+        <button class="v3-btn" id="v3Replay">↻ 重播</button>
+        <button class="v3-btn" id="v3Speed">速度 1×</button>
+      </div>
+      <div class="v3-body">
+        <div class="v3-stage" id="v3Stage">
+          <canvas id="v3Canvas" width="940" height="560"></canvas>
+          <div class="v3-labels" id="v3Labels"></div>
+        </div>
+        <div class="v3-panel">
+          <h4 id="v3Title">正在算什么</h4>
+          <div class="psub" id="v3Sub">青=前向 · 红=反向梯度 · 绿=改参数</div>
+          <div class="v3-eq" id="v3Eq"></div>
+          <div class="v3-bar"><i id="v3Bar"></i></div>
+          <div class="v3-dots" id="v3Dots"></div>
+        </div>
+      </div>
+      <div class="v3-hint">镜头 = 数据本人的视角 · 画面固定不旋转 · 点小圆点 = 跳到某次更新</div>
+    </div>
+<script src="three.min.js"></script>
+<script>
+(function(){
+  if(typeof THREE==='undefined'){document.getElementById('v3Eq').textContent='三维引擎未加载（请把 three.min.js 和 index.html 放同一目录）。';return;}
+  var D={"steps":[{"x":[0.0,1.0],"t":1.0,"lr":0.5,"fwd":{"z1":{"terms":[[0.0,2.0,0.0],[1.0,-2.0,-2.0],-1.0],"sum":-3.0},"z2":{"terms":[[0.0,-2.0,-0.0],[1.0,2.0,2.0],-1.0],"sum":1.0},"h1":0.0474,"h2":0.7311,"logit":{"terms":[[0.04742587317756678,3.0,0.1423],[0.7310585786300049,3.0,2.1932],-2.5],"sum":-0.1645},"p":0.459,"loss":0.7788},"grad":{"dlogit":-0.541,"dv":[-0.0257,-0.3955],"dbo":-0.541,"dh":[-1.6231,-1.6231],"sigp":[0.0452,0.1966],"dz":[-0.0733,-0.3191],"dW":[[-0.0,-0.0733],[-0.0,-0.3191]],"db":[-0.0733,-0.3191]},"before":{"W":[[2.0,-2.0],[-2.0,2.0]],"b":[-1.0,-1.0],"v":[3.0,3.0],"bo":-2.5},"after":{"W":[[2.0,-1.9633],[-2.0,2.1596]],"b":[-0.9633,-0.8404],"v":[3.0128,3.1978],"bo":-2.2295}},{"x":[0.0,1.0],"t":1.0,"lr":0.5,"fwd":{"z1":{"terms":[[0.0,2.0,0.0],[1.0,-1.9633369374168659,-1.9633],-0.963336937416866],"sum":-2.9266},"z2":{"terms":[[0.0,-2.0,-0.0],[1.0,2.1595601723535807,2.1596],-0.8404398276464191],"sum":1.3192},"h1":0.0509,"h2":0.789,"logit":{"terms":[[0.05085240300301077,3.0128294696621785,0.1532],[0.7890419471531464,3.1977632298027046,2.5232],-2.2294837437332173],"sum":0.4469},"p":0.6099,"loss":0.4945},"grad":{"dlogit":-0.3901,"dv":[-0.0198,-0.3078],"dbo":-0.3901,"dh":[-1.1753,-1.2474],"sigp":[0.0483,0.1665],"dz":[-0.0567,-0.2076],"dW":[[-0.0,-0.0567],[-0.0,-0.2076]],"db":[-0.0567,-0.2076]},"before":{"W":[[2.0,-1.9633369374168659],[-2.0,2.1595601723535807]],"b":[-0.963336937416866,-0.8404398276464191],"v":[3.0128294696621785,3.1977632298027046],"bo":-2.2294837437332173},"after":{"W":[[2.0,-1.935],[-2.0,2.2634]],"b":[-0.935,-0.7366],"v":[3.0227,3.3517],"bo":-2.0344}},{"x":[0.0,1.0],"t":1.0,"lr":0.5,"fwd":{"z1":{"terms":[[0.0,2.0,0.0],[1.0,-1.9349734724386518,-1.935],-0.9349734724386519],"sum":-2.87},"z2":{"terms":[[0.0,-2.0,-0.0],[1.0,2.263380406922286,2.2634],-0.7366195930777137],"sum":1.5268},"h1":0.0537,"h2":0.8215,"logit":{"terms":[[0.053657999029436736,3.0227480834826146,0.1622],[0.8215347608592828,3.351663574718041,2.7535],-2.03443664202892],"sum":0.8813},"p":0.7071,"loss":0.3466},"grad":{"dlogit":-0.2929,"dv":[-0.0157,-0.2406],"dbo":-0.2929,"dh":[-0.8854,-0.9818],"sigp":[0.0508,0.1466],"dz":[-0.045,-0.1439],"dW":[[-0.0,-0.045],[-0.0,-0.1439]],"db":[-0.045,-0.1439]},"before":{"W":[[2.0,-1.9349734724386518],[-2.0,2.263380406922286]],"b":[-0.9349734724386519,-0.7366195930777137],"v":[3.0227480834826146,3.351663574718041],"bo":-2.03443664202892},"after":{"W":[[2.0,-1.9125],[-2.0,2.3354]],"b":[-0.9125,-0.6646],"v":[3.0306,3.472],"bo":-1.888}},{"x":[0.0,1.0],"t":1.0,"lr":0.5,"fwd":{"z1":{"terms":[[0.0,2.0,0.0],[1.0,-1.912493399579275,-1.9125],-0.912493399579275],"sum":-2.825},"z2":{"terms":[[0.0,-2.0,-0.0],[1.0,2.3353506837303817,2.3354],-0.6646493162696179],"sum":1.6708},"h1":0.056,"h2":0.8417,"logit":{"terms":[[0.05598842791761362,3.030606728006158,0.1697],[0.841675881121238,3.4719839326535955,2.9223],-1.8879786177699034],"sum":1.204},"p":0.7692,"loss":0.2624},"grad":{"dlogit":-0.2308,"dv":[-0.0129,-0.1942],"dbo":-0.2308,"dh":[-0.6993,-0.8012],"sigp":[0.0529,0.1333],"dz":[-0.037,-0.1068],"dW":[[-0.0,-0.037],[-0.0,-0.1068]],"db":[-0.037,-0.1068]},"before":{"W":[[2.0,-1.912493399579275],[-2.0,2.3353506837303817]],"b":[-0.912493399579275,-0.6646493162696179],"v":[3.030606728006158,3.4719839326535955],"bo":-1.8879786177699034},"after":{"W":[[2.0,-1.894],[-2.0,2.3887]],"b":[-0.894,-0.6113],"v":[3.0371,3.5691],"bo":-1.7726}},{"x":[0.0,1.0],"t":1.0,"lr":0.5,"fwd":{"z1":{"terms":[[0.0,2.0,0.0],[1.0,-1.8940119150757688,-1.894],-0.8940119150757688],"sum":-2.788},"z2":{"terms":[[0.0,-2.0,-0.0],[1.0,2.3887334834204754,2.3887],-0.611266516579524],"sum":1.7774},"h1":0.058,"h2":0.8554,"logit":{"terms":[[0.05797543774751773,3.0370666898281686,0.1761],[0.8553796637102346,3.569096751512359,3.0529],-1.7725983139771957],"sum":1.4564},"p":0.811,"loss":0.2095},"grad":{"dlogit":-0.189,"dv":[-0.011,-0.1617],"dbo":-0.189,"dh":[-0.5741,-0.6746],"sigp":[0.0546,0.1237],"dz":[-0.0314,-0.0835],"dW":[[-0.0,-0.0314],[-0.0,-0.0835]],"db":[-0.0314,-0.0835]},"before":{"W":[[2.0,-1.8940119150757688],[-2.0,2.3887334834204754]],"b":[-0.8940119150757688,-0.611266516579524],"v":[3.0370666898281686,3.569096751512359],"bo":-1.7725983139771957},"after":{"W":[[2.0,-1.8783],[-2.0,2.4305]],"b":[-0.8783,-0.5695],"v":[3.0425,3.6499],"bo":-1.6781}},{"x":[0.0,1.0],"t":1.0,"lr":0.5,"fwd":{"z1":{"terms":[[0.0,2.0,0.0],[1.0,-1.878335944579458,-1.8783],-0.878335944579458],"sum":-2.7566},"z2":{"terms":[[0.0,-2.0,-0.0],[1.0,2.430460799797229,2.4305],-0.5695392002027704],"sum":1.861},"h1":0.0597,"h2":0.8654,"logit":{"terms":[[0.0597129691804957,3.0425458990254115,0.1817],[0.8654088977845852,3.6499379543152877,3.1587],-1.6780891664808926],"sum":1.6623},"p":0.8405,"loss":0.1737},"grad":{"dlogit":-0.1595,"dv":[-0.0095,-0.138],"dbo":-0.1595,"dh":[-0.4851,-0.582],"sigp":[0.0561,0.1165],"dz":[-0.0272,-0.0678],"dW":[[-0.0,-0.0272],[-0.0,-0.0678]],"db":[-0.0272,-0.0678]},"before":{"W":[[2.0,-1.878335944579458],[-2.0,2.430460799797229]],"b":[-0.878335944579458,-0.5695392002027704],"v":[3.0425458990254115,3.6499379543152877],"bo":-1.6780891664808926},"after":{"W":[[2.0,-1.8647],[-2.0,2.4644]],"b":[-0.8647,-0.5356],"v":[3.0473,3.7189],"bo":-1.5984}}]}, ST=D.steps;
+  var stage=document.getElementById('v3Stage'), cv=document.getElementById('v3Canvas');
+  var labelBox=document.getElementById('v3Labels');
+  var tag=document.getElementById('v3Tag'), epEl=document.getElementById('v3Epoch');
+  var eqEl=document.getElementById('v3Eq'), titleEl=document.getElementById('v3Title');
+  var bar=document.getElementById('v3Bar'), dotsBox=document.getElementById('v3Dots');
+  var playBtn=document.getElementById('v3Play'), replayBtn=document.getElementById('v3Replay'), speedBtn=document.getElementById('v3Speed');
+
+  var W=cv.width,H=cv.height;
+  var renderer=new THREE.WebGLRenderer({canvas:cv,antialias:true,alpha:false});
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2)); renderer.setSize(W,H,false);
+  var scene=new THREE.Scene(); scene.background=new THREE.Color(0x060a14);
+  scene.fog=new THREE.FogExp2(0x060a14,0.028);
+  var camera=new THREE.PerspectiveCamera(46,W/H,0.1,200);
+  var camPos=new THREE.Vector3(-5,1.9,0), camLook=new THREE.Vector3(0,0,0), camInit=false;
+  function cam(A,Bp,ee){
+    var px=A[0]+(Bp[0]-A[0])*ee, py=A[1]+(Bp[1]-A[1])*ee, pz=A[2]+(Bp[2]-A[2])*ee;
+    var dx=Bp[0]-A[0], dy=Bp[1]-A[1], dz=Bp[2]-A[2];
+    var len=Math.sqrt(dx*dx+dy*dy+dz*dz)||1; dx/=len;dy/=len;dz/=len;
+    var target=new THREE.Vector3(px-dx*6.2, py-dy*6.2+2.1, pz-dz*6.2);
+    var look=new THREE.Vector3(px+dx*5.0, py+dy*5.0, pz+dz*5.0);
+    if(!camInit){camPos.copy(target);camLook.copy(look);camInit=true;}
+    camPos.lerp(target,0.06); camLook.lerp(look,0.06);
+    camera.position.copy(camPos); camera.lookAt(camLook);
+  }
+  cam([-5,1.9,0],[0,2.1,-1.6],0);
+
+  scene.add(new THREE.AmbientLight(0xffffff,0.55));
+  var pl=new THREE.PointLight(0x7dd3fc,1.2); pl.position.set(-6,8,10); scene.add(pl);
+  var pl2=new THREE.PointLight(0xa78bfa,0.8); pl2.position.set(8,-4,6); scene.add(pl2);
+  var grid=new THREE.GridHelper(40,40,0x1e3a5f,0x122036); grid.position.y=-3.4; scene.add(grid);
+
+  var POS={x1:[-5,1.9,0],x2:[-5,-1.9,0],h1:[0,2.1,-1.6],h2:[0,-2.1,1.6],y:[5,0,0],L:[8,1.2,-2.6]};
+  var COL={x1:0x38bdf8,x2:0x38bdf8,h1:0xa78bfa,h2:0xa78bfa,y:0x34d399,L:0xfbbf24};
+  var nodeMesh={};
+  Object.keys(POS).forEach(function(k){
+    var g=new THREE.SphereGeometry(0.55,28,28);
+    var m=new THREE.MeshPhongMaterial({color:COL[k],emissive:COL[k],emissiveIntensity:0.45,shininess:60});
+    var mesh=new THREE.Mesh(g,m); mesh.position.set(POS[k][0],POS[k][1],POS[k][2]); scene.add(mesh);
+    var halo=new THREE.Sprite(new THREE.SpriteMaterial({map:glowTex(),color:COL[k],transparent:true,opacity:0.5,depthWrite:false}));
+    halo.scale.set(2.0,2.0,1); mesh.add(halo);
+    nodeMesh[k]=mesh;
+  });
+  function glowTex(){
+    var c=document.createElement('canvas');c.width=c.height=128;var x=c.getContext('2d');
+    var g=x.createRadialGradient(64,64,0,64,64,64);g.addColorStop(0,'rgba(255,255,255,1)');g.addColorStop(.25,'rgba(255,255,255,.5)');g.addColorStop(1,'rgba(255,255,255,0)');
+    x.fillStyle=g;x.fillRect(0,0,128,128);return new THREE.CanvasTexture(c);
+  }
+  var EDEF=[['x1','h1','w00'],['x1','h2','w01'],['x2','h1','w10'],['x2','h2','w11'],['h1','y','v0'],['h2','y','v1'],['y','L','loss']];
+  var lineMesh={},edgeLabels={};
+  EDEF.forEach(function(e){
+    var a=POS[e[0]],b=POS[e[1]];
+    var geo=new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(a[0],a[1],a[2]),new THREE.Vector3(b[0],b[1],b[2])]);
+    var mat=new THREE.LineBasicMaterial({color:0x3b5b8c,transparent:true,opacity:.75});
+    var ln=new THREE.Line(geo,mat); scene.add(ln); lineMesh[e[2]]=ln;
+    var lab=document.createElement('div');lab.className='v3-edge';labelBox.appendChild(lab);edgeLabels[e[2]]=lab;
+  });
+  var nodeLabels={};
+  Object.keys(POS).forEach(function(k){var d=document.createElement('div');d.className='v3-node';d.innerHTML='<div class="nm">'+k+'</div><div class="vl"></div>';labelBox.appendChild(d);nodeLabels[k]=d;});
+
+  var pk=new THREE.Mesh(new THREE.SphereGeometry(0.32,20,20),new THREE.MeshBasicMaterial({color:0xffffff}));
+  var pkHalo=new THREE.Sprite(new THREE.SpriteMaterial({map:glowTex(),color:0x38bdf8,transparent:true,opacity:.85,depthWrite:false}));
+  pkHalo.scale.set(1.8,1.8,1);pk.add(pkHalo);scene.add(pk);
+
+  function n2(v){return (v>=0?'+':'')+Number(v).toFixed(2);}
+  function f3(v){return Number(v).toFixed(3);}
+
+  var BEATS=[
+    {tag:'FORWARD · 算 z₁、h₁',dur:1500,route:['x2','h1'],col:0x38bdf8},
+    {tag:'FORWARD · 算 z₂、h₂',dur:1500,route:['x2','h2'],col:0x38bdf8},
+    {tag:'FORWARD · 合成 logit、p',dur:1600,route:['h1','h2','y'],col:0x34d399},
+    {tag:'LOSS · 算错多少',dur:1300,route:['y','L'],col:0xfbbf24},
+    {tag:'BACKWARD · 起点 ∂L/∂logit = p−t',dur:1400,route:['L','y'],col:0xf87171},
+    {tag:'BACKWARD · 链式：dh、dz',dur:1700,route:['y','h1','h2'],col:0xf87171},
+    {tag:'BACKWARD · 求每个权重的梯度',dur:1600,route:['h1','x2'],col:0xf87171},
+    {tag:'UPDATE · 逐个改参数',dur:2100,route:['x1','h1','y'],col:0x4ade80}
+  ];
+  function buildEq(rec,bi){
+    var f=rec.fwd,g=rec.grad,b=rec.before,a=rec.after,lr=rec.lr;
+    var t1=f.z1.terms,t2=f.z2.terms,tl=f.logit.terms;
+    if(bi===0)return '<span class="dim">隐藏神经元 h₁ 先把输入加权求和：</span>\n'+
+      '<span class="bl">z₁</span> = x₁·w₁₁ + x₂·w₁₂ + b₁\n'+
+      ' = '+n2(t1[0][0])+'×'+n2(t1[0][1])+' + '+n2(t1[1][0])+'×'+n2(t1[1][1])+' + ('+n2(t1[2])+')\n'+
+      ' = <span class="hl">'+n2(f.z1.sum)+'</span>\n'+
+      '<span class="bl">h₁</span> = σ(z₁) = 1/(1+e⁻ᶻ) = <span class="hl">'+f3(f.h1)+'</span>';
+    if(bi===1)return '<span class="dim">同理算 h₂：</span>\n'+
+      '<span class="bl">z₂</span> = x₁·w₂₁ + x₂·w₂₂ + b₂\n'+
+      ' = '+n2(t2[0][0])+'×'+n2(t2[0][1])+' + '+n2(t2[1][0])+'×'+n2(t2[1][1])+' + ('+n2(t2[2])+')\n'+
+      ' = <span class="hl">'+n2(f.z2.sum)+'</span>\n'+
+      '<span class="bl">h₂</span> = σ(z₂) = <span class="hl">'+f3(f.h2)+'</span>';
+    if(bi===2)return '<span class="dim">输出层把两个隐藏值合成一个分数，再变概率：</span>\n'+
+      '<span class="bl">logit</span> = h₁·v₁ + h₂·v₂ + b₀\n'+
+      ' = '+f3(tl[0][0])+'×'+n2(tl[0][1])+' + '+f3(tl[1][0])+'×'+n2(tl[1][1])+' + ('+n2(tl[2])+')\n'+
+      ' = <span class="hl">'+n2(f.logit.sum)+'</span>\n'+
+      '<span class="bl">p</span> = σ(logit) = <span class="hl">'+f3(f.p)+'</span>  <span class="dim">(目标 t=1)</span>';
+    if(bi===3)return '<span class="dim">答案给的是 1，可模型只预测 '+f3(f.p)+'，算损失：</span>\n'+
+      '<span class="bl">L</span> = −[ t·ln(p) + (1−t)·ln(1−p) ]\n'+
+      ' = −ln('+f3(f.p)+') = <span class="hl">'+f3(f.loss)+'</span>\n'+
+      '<span class="dim">p 越小、离 1 越远，损失越大 → 一定要改参数</span>';
+    if(bi===4)return '<span class="dim">反向传播的总开关（sigmoid+交叉熵的美妙结果）：</span>\n'+
+      '<span class="rd">∂L/∂logit</span> = p − t\n'+
+      ' = '+f3(f.p)+' − 1 = <span class="rd">'+f3(g.dlogit)+'</span>\n'+
+      '<span class="dim">负数 = 把 logit 调大，损失才会下降</span>';
+    if(bi===5)return '<span class="dim">用链式法则把信号往回传两层：</span>\n'+
+      '<span class="rd">∂L/∂h₁</span> = (∂L/∂logit)·v₁ = '+f3(g.dlogit)+'×'+n2(b.v[0])+' = <span class="rd">'+f3(g.dh[0])+'</span>\n'+
+      '<span class="rd">σ′(z₁)</span> = h₁(1−h₁) = '+f3(f.h1)+'×'+f3(g.sigp[0]/Math.max(f.h1,1e-9))+' = '+f3(g.sigp[0])+'\n'+
+      '<span class="rd">∂L/∂z₁</span> = ∂L/∂h₁ × σ′(z₁) = <span class="rd">'+f3(g.dz[0])+'</span>\n'+
+      '<span class="dim">（sigmoid 导数最大只有 0.25，这就是梯度变小的地方）</span>';
+    if(bi===6)return '<span class="dim">有了 ∂L/∂z，乘上它自己的输入就是权重的梯度：</span>\n'+
+      '<span class="rd">∂L/∂w₁₂</span> = ∂L/∂z₁ · x₂ = '+f3(g.dz[0])+'×'+f3(rec.x[1])+' = <span class="rd">'+f3(g.dW[0][1])+'</span>\n'+
+      '<span class="rd">∂L/∂w₂₂</span> = ∂L/∂z₂ · x₂ = <span class="rd">'+f3(g.dW[1][1])+'</span>\n'+
+      '<span class="rd">∂L/∂v₁</span> = (∂L/∂logit)·h₁ = <span class="rd">'+f3(g.dv[0])+'</span>\n'+
+      '<span class="dim">注意 w₁₁、w₂₁ 的梯度是 0，因为本样本 x₁=0，没经过它们</span>';
+    return '<span class="dim">按 w新 = w旧 − 学习率×梯度 逐个修改：</span>\n'+
+      '<span class="gr">w₁₂: '+f3(b.W[0][1])+' − '+n2(lr)+'×('+f3(g.dW[0][1])+') = '+f3(a.W[0][1])+'</span>\n'+
+      '<span class="gr">w₂₂: '+f3(b.W[1][1])+' − '+n2(lr)+'×('+f3(g.dW[1][1])+') = '+f3(a.W[1][1])+'</span>\n'+
+      '<span class="gr">v₁ : '+f3(b.v[0])+' − '+n2(lr)+'×('+f3(g.dv[0])+') = '+f3(a.v[0])+'</span>\n'+
+      '<span class="gr">b₀ : '+f3(b.bo)+' − '+n2(lr)+'×('+f3(g.dbo)+') = '+f3(a.bo)+'</span>\n'+
+      '<span class="hl">改完再预测：p 会从 '+f3(f.p)+' 升向 '+f3(ST[Math.min(si+1,ST.length-1)].fwd.p)+'</span>';
+  }
+
+  for(var i=0;i<ST.length;i++){var b=document.createElement('b');b.dataset.i=i;dotsBox.appendChild(b);}
+  var dots=dotsBox.querySelectorAll('b');
+  dots.forEach(function(b){b.addEventListener('click',function(){si=+this.dataset.i;elapsed=0;});});
+  playBtn.addEventListener('click',function(){playing=!playing;playBtn.textContent=playing?'⏸ 暂停':'▶ 播放';playBtn.classList.toggle('on',playing);});
+  replayBtn.addEventListener('click',function(){si=0;elapsed=0;playing=true;playBtn.textContent='⏸ 暂停';playBtn.classList.add('on');});
+  speedBtn.addEventListener('click',function(){rate=rate===1?2:(rate===2?0.5:1);speedBtn.textContent='速度 '+rate+'×';});
+
+  var total=BEATS.reduce(function(s,b){return s+b.dur;},0);
+  var si=0,elapsed=0,playing=true,rate=1,last=performance.now(),curBeat=-1;
+  function project(pos){
+    var v=new THREE.Vector3(pos[0],pos[1],pos[2]).project(camera);
+    return {x:(v.x*.5+.5)*W,y:(-v.y*.5+.5)*H,vis:v.z<1};
+  }
+  function placeLabels(rec,bi){
+    Object.keys(POS).forEach(function(k){
+      var p=project(POS[k]),d=nodeLabels[k];
+      d.style.left=(p.x/W*100)+'%';d.style.top=((p.y-46)/H*100)+'%';d.style.display=p.vis?'block':'none';
+      var vl='';
+      if(bi<=3){vl=({x1:rec.x[0].toFixed(0),x2:rec.x[1].toFixed(0),h1:f3(rec.fwd.h1),h2:f3(rec.fwd.h2),y:'p '+f3(rec.fwd.p),L:'L '+f3(rec.fwd.loss)})[k];}
+      else if(bi===4){vl=k==='y'?('∇'+f3(rec.grad.dlogit)):(k==='L'?f3(rec.fwd.loss):'');}
+      else if(bi===5){vl=k==='h1'?('∇'+f3(rec.grad.dz[0])):(k==='h2'?('∇'+f3(rec.grad.dz[1])):'');}
+      else if(bi===6){vl=k==='x2'?('∇w '+f3(rec.grad.dW[0][1])):'';}
+      else {vl=k==='h1'?f3(rec.after.W[0][1]):(k==='y'?f3(rec.after.v[0]):'');}
+      d.querySelector('.vl').textContent=vl;
+    });
+    EDEF.forEach(function(e){
+      var a=POS[e[0]],b=POS[e[1]];
+      var mid=[(a[0]+b[0])/2,(a[1]+b[1])/2,(a[2]+b[2])/2],p=project(mid),lab=edgeLabels[e[2]];
+      lab.style.left=(p.x/W*100)+'%';lab.style.top=(p.y/H*100)+'%';lab.style.display=p.vis?'block':'none';
+      var txt;
+      if(bi>=4&&bi<=6){
+        var gv=(e[2]==='w00'||e[2]==='w01'||e[2]==='w10'||e[2]==='w11')?rec.grad.dW[+e[2][1]][+e[2][2]]:(e[2]==='v0'?rec.grad.dv[0]:(e[2]==='v1'?rec.grad.dv[1]:null));
+        txt=gv==null?'':('g '+f3(gv));lab.style.color='#fca5a5';
+      } else if(bi===7){
+        var wv=(e[2][0]==='w')?rec.after.W[+e[2][1]][+e[2][2]]:(e[2]==='v0'?rec.after.v[0]:(e[2]==='v1'?rec.after.v[1]:null));
+        txt=wv==null?'':n2(wv);lab.style.color='#86efac';
+      } else {
+        var w2=(e[2][0]==='w')?rec.before.W[+e[2][1]][+e[2][2]]:(e[2]==='v0'?rec.before.v[0]:(e[2]==='v1'?rec.before.v[1]:null));
+        txt=w2==null?'':n2(w2);lab.style.color='#93c5fd';
+      }
+      lab.textContent=txt;
+    });
+  }
+  function colorLines(bi){
+    EDEF.forEach(function(e){var m=lineMesh[e[2]];
+      if(bi>=4&&bi<=6){m.material.color.setHex(0xef4444);m.material.opacity=.9;}
+      else if(bi===7){m.material.color.setHex(0x4ade80);m.material.opacity=.9;}
+      else {m.material.color.setHex(0x3b5b8c);m.material.opacity=.75;}
+    });
+  }
+  function frame(now){
+    var dt=Math.min(now-last,60);last=now;
+    if(playing)elapsed+=dt*rate;
+    if(elapsed>=total){elapsed-=total;si=(si+1)%ST.length;}
+    var acc=0,bi=BEATS.length-1;
+    for(var i=0;i<BEATS.length;i++){acc+=BEATS[i].dur;if(elapsed<acc){bi=i;break;}}
+    var beat=BEATS[bi],rec=ST[si];
+    var beforeDur=0;for(var i=0;i<bi;i++)beforeDur+=BEATS[i].dur;
+    var into=Math.max(0,Math.min(elapsed-beforeDur,beat.dur));
+    var prog=Math.max(0,Math.min(1,into/beat.dur));
+
+    if(bi!==curBeat){curBeat=bi;tag.textContent=beat.tag;eqEl.innerHTML=buildEq(rec,bi);
+      titleEl.textContent=['z₁、h₁ 怎么算','z₂、h₂ 怎么算','合成预测 p','损失 L','梯度从这里出发','链式法则往回传','每个权重的梯度','参数具体怎么改'][bi];}
+    epEl.textContent='样本 01 → 1 · 第 '+(si+1)+'/'+ST.length+' 次更新  |  p='+f3(rec.fwd.p)+' → '+f3(ST[(si+1)%ST.length].fwd.p);
+    dots.forEach(function(b,i){b.classList.toggle('on',i===si);});
+    bar.style.width=(elapsed/total*100).toFixed(1)+'%';
+
+    colorLines(bi);
+    placeLabels(rec,bi);
+    // packet along route
+    var route=beat.route, seg=1/(route.length-1), q=prog, idx=Math.min(route.length-2,Math.floor(q/seg)), lt=(q-idx*seg)/seg;
+    var A=POS[route[idx]],Bp=POS[route[idx+1]],ee=lt*lt*(3-2*lt);
+    pk.position.set(A[0]+(Bp[0]-A[0])*ee,A[1]+(Bp[1]-A[1])*ee,A[2]+(Bp[2]-A[2])*ee);
+    pkHalo.material.color.setHex(beat.col);
+    pk.scale.setScalar(bi===7?1.25:1);
+    Object.keys(nodeMesh).forEach(function(k){nodeMesh[k].material.emissiveIntensity=(route.indexOf(k)>=0)?0.8:0.42;});
+    cam(A,Bp,ee);
+    renderer.render(scene,camera);
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();
+</script>
+
+
+
+
     <h2><span class="num">1</span>这个作业在做什么</h2>
     <p><b>XOR（异或）</b>是最经典的「线性不可分」问题：两个输入不一样时输出 1，一样时输出 0（00→0，01→1，10→1，11→0）。
        你没法在图上画一条直线把 0 和 1 分开，所以<b>单层网络学不会它，必须加一个隐藏层</b>。这正是代码用
@@ -1232,273 +1506,6 @@ print("预测 =", pred.flatten().tolist())   # -&gt; [0,1,1,0] 全对</pre></div
 </style>
 
 
-<style>
-.v3{background:#080d1a;border:1px solid #1e293b;border-radius:20px;padding:18px;margin:24px 0;box-shadow:0 16px 40px rgba(15,23,42,.3);overflow:hidden}
-.v3-top{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:2px 4px 14px}
-.v3-tag{font-size:13px;font-weight:800;letter-spacing:.5px;color:#7dd3fc;background:rgba(56,189,248,.12);border:1px solid rgba(56,189,248,.35);border-radius:8px;padding:5px 12px;min-width:150px;text-align:center}
-.v3-epoch{font-size:13px;color:#fbbf24;font-weight:800;font-variant-numeric:tabular-nums}
-.v3-sp{flex:1}
-.v3-btn{background:#131b30;color:#cbd5e1;border:1px solid #273349;border-radius:8px;font-size:12.5px;font-weight:700;padding:6px 12px;cursor:pointer;transition:.15s}
-.v3-btn:hover{background:#1e293b;color:#fff}
-.v3-btn.on{background:#3730a3;border-color:#6366f1;color:#fff}
-.v3-body{display:grid;grid-template-columns:1.55fr 1fr;gap:14px}
-@media(max-width:860px){.v3-body{grid-template-columns:1fr}}
-.v3-stage{position:relative;background:#060a14;border:1px solid #1e293b;border-radius:14px;overflow:hidden;aspect-ratio:940/560}
-.v3-stage canvas{display:block;width:100%;height:100%}
-.v3-labels{position:absolute;inset:0;pointer-events:none}
-.v3-node{position:absolute;transform:translate(-50%,-50%);text-align:center;white-space:nowrap}
-.v3-node .nm{font:800 12px ui-monospace,Menlo,monospace;color:#e2e8f0;text-shadow:0 0 8px #000,0 0 4px #000}
-.v3-node .vl{font:700 12px ui-monospace,Menlo,monospace;color:#7dd3fc;text-shadow:0 0 8px #000}
-.v3-edge{position:absolute;transform:translate(-50%,-50%);font:700 11px ui-monospace,Menlo,monospace;color:#93c5fd;text-shadow:0 0 6px #000,0 0 3px #000}
-.v3-panel{background:#0d1426;border:1px solid #1e293b;border-radius:14px;padding:14px;min-height:360px;display:flex;flex-direction:column}
-.v3-panel h4{font-size:14px;color:#fbbf24;margin:0 0 3px;font-weight:800}
-.v3-panel .psub{font-size:11.5px;color:#64748b;margin-bottom:10px}
-.v3-eq{background:#111a2e;border:1px solid #22304a;border-radius:10px;padding:11px 12px;font:600 12.5px/1.9 ui-monospace,Menlo,Consolas,monospace;color:#cbd5e1;white-space:pre-wrap;word-break:break-word;flex:1}
-.v3-eq .hl{color:#fbbf24;font-weight:800}
-.v3-eq .bl{color:#7dd3fc;font-weight:800}
-.v3-eq .rd{color:#f87171;font-weight:800}
-.v3-eq .gr{color:#4ade80;font-weight:800}
-.v3-eq .dim{color:#64748b}
-.v3-bar{height:5px;background:#111827;border-radius:99px;margin-top:12px;overflow:hidden}
-.v3-bar i{display:block;height:100%;background:linear-gradient(90deg,#38bdf8,#a78bfa,#f87171);width:0%;border-radius:99px;transition:width .08s linear}
-.v3-dots{display:flex;gap:6px;margin-top:9px;flex-wrap:wrap}
-.v3-dots b{width:10px;height:10px;border-radius:50%;background:#1e293b;display:block;cursor:pointer;transition:.15s}
-.v3-dots b.on{background:#38bdf8;box-shadow:0 0 8px #38bdf8}
-.v3-hint{font-size:11.5px;color:#64748b;margin-top:10px;text-align:center}
-</style>
-
-    <h2><span class="num">10</span>真·3D：每一步的算式、梯度和参数修改都摊开给你看</h2>
-    <p class="lead">这一节替代上一节的平面演示。用鼠标拖动可<b>旋转</b>这个立体网络、滚轮可缩放；右边面板会跟着动画把<b>每一步到底算了什么</b>、<b>梯度怎么一步步求出来</b>、<b>参数具体改成多少</b>都写出来。全部数字来自真实训练。</p>
-
-    <div class="v3" id="v3">
-      <div class="v3-top">
-        <span class="v3-tag" id="v3Tag">FORWARD · 算 z₁、h₁</span>
-        <span class="v3-epoch" id="v3Epoch">样本 01 → 1 · 第 1/6 次更新</span>
-        <span class="v3-sp"></span>
-        <button class="v3-btn on" id="v3Play">⏸ 暂停</button>
-        <button class="v3-btn" id="v3Replay">↻ 重播</button>
-        <button class="v3-btn" id="v3Speed">速度 1×</button>
-      </div>
-      <div class="v3-body">
-        <div class="v3-stage" id="v3Stage">
-          <canvas id="v3Canvas" width="940" height="560"></canvas>
-          <div class="v3-labels" id="v3Labels"></div>
-        </div>
-        <div class="v3-panel">
-          <h4 id="v3Title">正在算什么</h4>
-          <div class="psub" id="v3Sub">青=前向 · 红=反向梯度 · 绿=改参数</div>
-          <div class="v3-eq" id="v3Eq"></div>
-          <div class="v3-bar"><i id="v3Bar"></i></div>
-          <div class="v3-dots" id="v3Dots"></div>
-        </div>
-      </div>
-      <div class="v3-hint">按住画面拖动 = 转视角 · 滚轮 = 缩放 · 点小圆点 = 跳到某次更新</div>
-    </div>
-<script src="three.min.js"></script>
-<script>
-(function(){
-  if(typeof THREE==='undefined'){document.getElementById('v3Eq').textContent='三维引擎未加载（请把 three.min.js 和 index.html 放同一目录）。';return;}
-  var D={"steps":[{"x":[0.0,1.0],"t":1.0,"lr":0.5,"fwd":{"z1":{"terms":[[0.0,2.0,0.0],[1.0,-2.0,-2.0],-1.0],"sum":-3.0},"z2":{"terms":[[0.0,-2.0,-0.0],[1.0,2.0,2.0],-1.0],"sum":1.0},"h1":0.0474,"h2":0.7311,"logit":{"terms":[[0.04742587317756678,3.0,0.1423],[0.7310585786300049,3.0,2.1932],-2.5],"sum":-0.1645},"p":0.459,"loss":0.7788},"grad":{"dlogit":-0.541,"dv":[-0.0257,-0.3955],"dbo":-0.541,"dh":[-1.6231,-1.6231],"sigp":[0.0452,0.1966],"dz":[-0.0733,-0.3191],"dW":[[-0.0,-0.0733],[-0.0,-0.3191]],"db":[-0.0733,-0.3191]},"before":{"W":[[2.0,-2.0],[-2.0,2.0]],"b":[-1.0,-1.0],"v":[3.0,3.0],"bo":-2.5},"after":{"W":[[2.0,-1.9633],[-2.0,2.1596]],"b":[-0.9633,-0.8404],"v":[3.0128,3.1978],"bo":-2.2295}},{"x":[0.0,1.0],"t":1.0,"lr":0.5,"fwd":{"z1":{"terms":[[0.0,2.0,0.0],[1.0,-1.9633369374168659,-1.9633],-0.963336937416866],"sum":-2.9266},"z2":{"terms":[[0.0,-2.0,-0.0],[1.0,2.1595601723535807,2.1596],-0.8404398276464191],"sum":1.3192},"h1":0.0509,"h2":0.789,"logit":{"terms":[[0.05085240300301077,3.0128294696621785,0.1532],[0.7890419471531464,3.1977632298027046,2.5232],-2.2294837437332173],"sum":0.4469},"p":0.6099,"loss":0.4945},"grad":{"dlogit":-0.3901,"dv":[-0.0198,-0.3078],"dbo":-0.3901,"dh":[-1.1753,-1.2474],"sigp":[0.0483,0.1665],"dz":[-0.0567,-0.2076],"dW":[[-0.0,-0.0567],[-0.0,-0.2076]],"db":[-0.0567,-0.2076]},"before":{"W":[[2.0,-1.9633369374168659],[-2.0,2.1595601723535807]],"b":[-0.963336937416866,-0.8404398276464191],"v":[3.0128294696621785,3.1977632298027046],"bo":-2.2294837437332173},"after":{"W":[[2.0,-1.935],[-2.0,2.2634]],"b":[-0.935,-0.7366],"v":[3.0227,3.3517],"bo":-2.0344}},{"x":[0.0,1.0],"t":1.0,"lr":0.5,"fwd":{"z1":{"terms":[[0.0,2.0,0.0],[1.0,-1.9349734724386518,-1.935],-0.9349734724386519],"sum":-2.87},"z2":{"terms":[[0.0,-2.0,-0.0],[1.0,2.263380406922286,2.2634],-0.7366195930777137],"sum":1.5268},"h1":0.0537,"h2":0.8215,"logit":{"terms":[[0.053657999029436736,3.0227480834826146,0.1622],[0.8215347608592828,3.351663574718041,2.7535],-2.03443664202892],"sum":0.8813},"p":0.7071,"loss":0.3466},"grad":{"dlogit":-0.2929,"dv":[-0.0157,-0.2406],"dbo":-0.2929,"dh":[-0.8854,-0.9818],"sigp":[0.0508,0.1466],"dz":[-0.045,-0.1439],"dW":[[-0.0,-0.045],[-0.0,-0.1439]],"db":[-0.045,-0.1439]},"before":{"W":[[2.0,-1.9349734724386518],[-2.0,2.263380406922286]],"b":[-0.9349734724386519,-0.7366195930777137],"v":[3.0227480834826146,3.351663574718041],"bo":-2.03443664202892},"after":{"W":[[2.0,-1.9125],[-2.0,2.3354]],"b":[-0.9125,-0.6646],"v":[3.0306,3.472],"bo":-1.888}},{"x":[0.0,1.0],"t":1.0,"lr":0.5,"fwd":{"z1":{"terms":[[0.0,2.0,0.0],[1.0,-1.912493399579275,-1.9125],-0.912493399579275],"sum":-2.825},"z2":{"terms":[[0.0,-2.0,-0.0],[1.0,2.3353506837303817,2.3354],-0.6646493162696179],"sum":1.6708},"h1":0.056,"h2":0.8417,"logit":{"terms":[[0.05598842791761362,3.030606728006158,0.1697],[0.841675881121238,3.4719839326535955,2.9223],-1.8879786177699034],"sum":1.204},"p":0.7692,"loss":0.2624},"grad":{"dlogit":-0.2308,"dv":[-0.0129,-0.1942],"dbo":-0.2308,"dh":[-0.6993,-0.8012],"sigp":[0.0529,0.1333],"dz":[-0.037,-0.1068],"dW":[[-0.0,-0.037],[-0.0,-0.1068]],"db":[-0.037,-0.1068]},"before":{"W":[[2.0,-1.912493399579275],[-2.0,2.3353506837303817]],"b":[-0.912493399579275,-0.6646493162696179],"v":[3.030606728006158,3.4719839326535955],"bo":-1.8879786177699034},"after":{"W":[[2.0,-1.894],[-2.0,2.3887]],"b":[-0.894,-0.6113],"v":[3.0371,3.5691],"bo":-1.7726}},{"x":[0.0,1.0],"t":1.0,"lr":0.5,"fwd":{"z1":{"terms":[[0.0,2.0,0.0],[1.0,-1.8940119150757688,-1.894],-0.8940119150757688],"sum":-2.788},"z2":{"terms":[[0.0,-2.0,-0.0],[1.0,2.3887334834204754,2.3887],-0.611266516579524],"sum":1.7774},"h1":0.058,"h2":0.8554,"logit":{"terms":[[0.05797543774751773,3.0370666898281686,0.1761],[0.8553796637102346,3.569096751512359,3.0529],-1.7725983139771957],"sum":1.4564},"p":0.811,"loss":0.2095},"grad":{"dlogit":-0.189,"dv":[-0.011,-0.1617],"dbo":-0.189,"dh":[-0.5741,-0.6746],"sigp":[0.0546,0.1237],"dz":[-0.0314,-0.0835],"dW":[[-0.0,-0.0314],[-0.0,-0.0835]],"db":[-0.0314,-0.0835]},"before":{"W":[[2.0,-1.8940119150757688],[-2.0,2.3887334834204754]],"b":[-0.8940119150757688,-0.611266516579524],"v":[3.0370666898281686,3.569096751512359],"bo":-1.7725983139771957},"after":{"W":[[2.0,-1.8783],[-2.0,2.4305]],"b":[-0.8783,-0.5695],"v":[3.0425,3.6499],"bo":-1.6781}},{"x":[0.0,1.0],"t":1.0,"lr":0.5,"fwd":{"z1":{"terms":[[0.0,2.0,0.0],[1.0,-1.878335944579458,-1.8783],-0.878335944579458],"sum":-2.7566},"z2":{"terms":[[0.0,-2.0,-0.0],[1.0,2.430460799797229,2.4305],-0.5695392002027704],"sum":1.861},"h1":0.0597,"h2":0.8654,"logit":{"terms":[[0.0597129691804957,3.0425458990254115,0.1817],[0.8654088977845852,3.6499379543152877,3.1587],-1.6780891664808926],"sum":1.6623},"p":0.8405,"loss":0.1737},"grad":{"dlogit":-0.1595,"dv":[-0.0095,-0.138],"dbo":-0.1595,"dh":[-0.4851,-0.582],"sigp":[0.0561,0.1165],"dz":[-0.0272,-0.0678],"dW":[[-0.0,-0.0272],[-0.0,-0.0678]],"db":[-0.0272,-0.0678]},"before":{"W":[[2.0,-1.878335944579458],[-2.0,2.430460799797229]],"b":[-0.878335944579458,-0.5695392002027704],"v":[3.0425458990254115,3.6499379543152877],"bo":-1.6780891664808926},"after":{"W":[[2.0,-1.8647],[-2.0,2.4644]],"b":[-0.8647,-0.5356],"v":[3.0473,3.7189],"bo":-1.5984}}]}, ST=D.steps;
-  var stage=document.getElementById('v3Stage'), cv=document.getElementById('v3Canvas');
-  var labelBox=document.getElementById('v3Labels');
-  var tag=document.getElementById('v3Tag'), epEl=document.getElementById('v3Epoch');
-  var eqEl=document.getElementById('v3Eq'), titleEl=document.getElementById('v3Title');
-  var bar=document.getElementById('v3Bar'), dotsBox=document.getElementById('v3Dots');
-  var playBtn=document.getElementById('v3Play'), replayBtn=document.getElementById('v3Replay'), speedBtn=document.getElementById('v3Speed');
-
-  var W=cv.width,H=cv.height;
-  var renderer=new THREE.WebGLRenderer({canvas:cv,antialias:true,alpha:false});
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2)); renderer.setSize(W,H,false);
-  var scene=new THREE.Scene(); scene.background=new THREE.Color(0x060a14);
-  scene.fog=new THREE.FogExp2(0x060a14,0.028);
-  var camera=new THREE.PerspectiveCamera(46,W/H,0.1,200);
-  var theta=0.0, phi=0.16, radius=15.5, dragging=false, px=0, py=0;
-  function cam(){camera.position.set(radius*Math.sin(theta)*Math.cos(phi),radius*Math.sin(phi),radius*Math.cos(theta)*Math.cos(phi));camera.lookAt(0,0,0);}
-  cam();
-  stage.addEventListener('mousedown',function(e){dragging=true;px=e.clientX;py=e.clientY;});
-  window.addEventListener('mouseup',function(){dragging=false;});
-  window.addEventListener('mousemove',function(e){if(!dragging)return;theta-=(e.clientX-px)*0.007;phi=Math.max(-0.75,Math.min(0.85,phi+(e.clientY-py)*0.006));px=e.clientX;py=e.clientY;});
-  stage.addEventListener('wheel',function(e){e.preventDefault();radius=Math.max(8,Math.min(30,radius+e.deltaY*0.012));},{passive:false});
-
-  scene.add(new THREE.AmbientLight(0xffffff,0.55));
-  var pl=new THREE.PointLight(0x7dd3fc,1.2); pl.position.set(-6,8,10); scene.add(pl);
-  var pl2=new THREE.PointLight(0xa78bfa,0.8); pl2.position.set(8,-4,6); scene.add(pl2);
-  var grid=new THREE.GridHelper(40,40,0x1e3a5f,0x122036); grid.position.y=-3.4; scene.add(grid);
-
-  var POS={x1:[-5,1.9,0],x2:[-5,-1.9,0],h1:[0,2.1,-1.6],h2:[0,-2.1,1.6],y:[5,0,0],L:[8,1.2,-2.6]};
-  var COL={x1:0x38bdf8,x2:0x38bdf8,h1:0xa78bfa,h2:0xa78bfa,y:0x34d399,L:0xfbbf24};
-  var nodeMesh={};
-  Object.keys(POS).forEach(function(k){
-    var g=new THREE.SphereGeometry(0.55,28,28);
-    var m=new THREE.MeshPhongMaterial({color:COL[k],emissive:COL[k],emissiveIntensity:0.45,shininess:60});
-    var mesh=new THREE.Mesh(g,m); mesh.position.set(POS[k][0],POS[k][1],POS[k][2]); scene.add(mesh);
-    var halo=new THREE.Sprite(new THREE.SpriteMaterial({map:glowTex(),color:COL[k],transparent:true,opacity:0.5,depthWrite:false}));
-    halo.scale.set(3.1,3.1,1); mesh.add(halo);
-    nodeMesh[k]=mesh;
-  });
-  function glowTex(){
-    var c=document.createElement('canvas');c.width=c.height=128;var x=c.getContext('2d');
-    var g=x.createRadialGradient(64,64,0,64,64,64);g.addColorStop(0,'rgba(255,255,255,1)');g.addColorStop(.25,'rgba(255,255,255,.5)');g.addColorStop(1,'rgba(255,255,255,0)');
-    x.fillStyle=g;x.fillRect(0,0,128,128);return new THREE.CanvasTexture(c);
-  }
-  var EDEF=[['x1','h1','w00'],['x1','h2','w01'],['x2','h1','w10'],['x2','h2','w11'],['h1','y','v0'],['h2','y','v1'],['y','L','loss']];
-  var lineMesh={},edgeLabels={};
-  EDEF.forEach(function(e){
-    var a=POS[e[0]],b=POS[e[1]];
-    var geo=new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(a[0],a[1],a[2]),new THREE.Vector3(b[0],b[1],b[2])]);
-    var mat=new THREE.LineBasicMaterial({color:0x3b5b8c,transparent:true,opacity:.75});
-    var ln=new THREE.Line(geo,mat); scene.add(ln); lineMesh[e[2]]=ln;
-    var lab=document.createElement('div');lab.className='v3-edge';labelBox.appendChild(lab);edgeLabels[e[2]]=lab;
-  });
-  var nodeLabels={};
-  Object.keys(POS).forEach(function(k){var d=document.createElement('div');d.className='v3-node';d.innerHTML='<div class="nm">'+k+'</div><div class="vl"></div>';labelBox.appendChild(d);nodeLabels[k]=d;});
-
-  var pk=new THREE.Mesh(new THREE.SphereGeometry(0.32,20,20),new THREE.MeshBasicMaterial({color:0xffffff}));
-  var pkHalo=new THREE.Sprite(new THREE.SpriteMaterial({map:glowTex(),color:0x38bdf8,transparent:true,opacity:.85,depthWrite:false}));
-  pkHalo.scale.set(2.6,2.6,1);pk.add(pkHalo);scene.add(pk);
-
-  function n2(v){return (v>=0?'+':'')+Number(v).toFixed(2);}
-  function f3(v){return Number(v).toFixed(3);}
-
-  var BEATS=[
-    {tag:'FORWARD · 算 z₁、h₁',dur:1500,route:['x2','h1'],col:0x38bdf8},
-    {tag:'FORWARD · 算 z₂、h₂',dur:1500,route:['x2','h2'],col:0x38bdf8},
-    {tag:'FORWARD · 合成 logit、p',dur:1600,route:['h1','h2','y'],col:0x34d399},
-    {tag:'LOSS · 算错多少',dur:1300,route:['y','L'],col:0xfbbf24},
-    {tag:'BACKWARD · 起点 ∂L/∂logit = p−t',dur:1400,route:['L','y'],col:0xf87171},
-    {tag:'BACKWARD · 链式：dh、dz',dur:1700,route:['y','h1','h2'],col:0xf87171},
-    {tag:'BACKWARD · 求每个权重的梯度',dur:1600,route:['h1','x2'],col:0xf87171},
-    {tag:'UPDATE · 逐个改参数',dur:2100,route:['x1','h1','y'],col:0x4ade80}
-  ];
-  function buildEq(rec,bi){
-    var f=rec.fwd,g=rec.grad,b=rec.before,a=rec.after,lr=rec.lr;
-    var t1=f.z1.terms,t2=f.z2.terms,tl=f.logit.terms;
-    if(bi===0)return '<span class="dim">隐藏神经元 h₁ 先把输入加权求和：</span>\n'+
-      '<span class="bl">z₁</span> = x₁·w₁₁ + x₂·w₁₂ + b₁\n'+
-      ' = '+n2(t1[0][0])+'×'+n2(t1[0][1])+' + '+n2(t1[1][0])+'×'+n2(t1[1][1])+' + ('+n2(t1[2])+')\n'+
-      ' = <span class="hl">'+n2(f.z1.sum)+'</span>\n'+
-      '<span class="bl">h₁</span> = σ(z₁) = 1/(1+e⁻ᶻ) = <span class="hl">'+f3(f.h1)+'</span>';
-    if(bi===1)return '<span class="dim">同理算 h₂：</span>\n'+
-      '<span class="bl">z₂</span> = x₁·w₂₁ + x₂·w₂₂ + b₂\n'+
-      ' = '+n2(t2[0][0])+'×'+n2(t2[0][1])+' + '+n2(t2[1][0])+'×'+n2(t2[1][1])+' + ('+n2(t2[2])+')\n'+
-      ' = <span class="hl">'+n2(f.z2.sum)+'</span>\n'+
-      '<span class="bl">h₂</span> = σ(z₂) = <span class="hl">'+f3(f.h2)+'</span>';
-    if(bi===2)return '<span class="dim">输出层把两个隐藏值合成一个分数，再变概率：</span>\n'+
-      '<span class="bl">logit</span> = h₁·v₁ + h₂·v₂ + b₀\n'+
-      ' = '+f3(tl[0][0])+'×'+n2(tl[0][1])+' + '+f3(tl[1][0])+'×'+n2(tl[1][1])+' + ('+n2(tl[2])+')\n'+
-      ' = <span class="hl">'+n2(f.logit.sum)+'</span>\n'+
-      '<span class="bl">p</span> = σ(logit) = <span class="hl">'+f3(f.p)+'</span>  <span class="dim">(目标 t=1)</span>';
-    if(bi===3)return '<span class="dim">答案给的是 1，可模型只预测 '+f3(f.p)+'，算损失：</span>\n'+
-      '<span class="bl">L</span> = −[ t·ln(p) + (1−t)·ln(1−p) ]\n'+
-      ' = −ln('+f3(f.p)+') = <span class="hl">'+f3(f.loss)+'</span>\n'+
-      '<span class="dim">p 越小、离 1 越远，损失越大 → 一定要改参数</span>';
-    if(bi===4)return '<span class="dim">反向传播的总开关（sigmoid+交叉熵的美妙结果）：</span>\n'+
-      '<span class="rd">∂L/∂logit</span> = p − t\n'+
-      ' = '+f3(f.p)+' − 1 = <span class="rd">'+f3(g.dlogit)+'</span>\n'+
-      '<span class="dim">负数 = 把 logit 调大，损失才会下降</span>';
-    if(bi===5)return '<span class="dim">用链式法则把信号往回传两层：</span>\n'+
-      '<span class="rd">∂L/∂h₁</span> = (∂L/∂logit)·v₁ = '+f3(g.dlogit)+'×'+n2(b.v[0])+' = <span class="rd">'+f3(g.dh[0])+'</span>\n'+
-      '<span class="rd">σ′(z₁)</span> = h₁(1−h₁) = '+f3(f.h1)+'×'+f3(g.sigp[0]/Math.max(f.h1,1e-9))+' = '+f3(g.sigp[0])+'\n'+
-      '<span class="rd">∂L/∂z₁</span> = ∂L/∂h₁ × σ′(z₁) = <span class="rd">'+f3(g.dz[0])+'</span>\n'+
-      '<span class="dim">（sigmoid 导数最大只有 0.25，这就是梯度变小的地方）</span>';
-    if(bi===6)return '<span class="dim">有了 ∂L/∂z，乘上它自己的输入就是权重的梯度：</span>\n'+
-      '<span class="rd">∂L/∂w₁₂</span> = ∂L/∂z₁ · x₂ = '+f3(g.dz[0])+'×'+f3(rec.x[1])+' = <span class="rd">'+f3(g.dW[0][1])+'</span>\n'+
-      '<span class="rd">∂L/∂w₂₂</span> = ∂L/∂z₂ · x₂ = <span class="rd">'+f3(g.dW[1][1])+'</span>\n'+
-      '<span class="rd">∂L/∂v₁</span> = (∂L/∂logit)·h₁ = <span class="rd">'+f3(g.dv[0])+'</span>\n'+
-      '<span class="dim">注意 w₁₁、w₂₁ 的梯度是 0，因为本样本 x₁=0，没经过它们</span>';
-    return '<span class="dim">按 w新 = w旧 − 学习率×梯度 逐个修改：</span>\n'+
-      '<span class="gr">w₁₂: '+f3(b.W[0][1])+' − '+n2(lr)+'×('+f3(g.dW[0][1])+') = '+f3(a.W[0][1])+'</span>\n'+
-      '<span class="gr">w₂₂: '+f3(b.W[1][1])+' − '+n2(lr)+'×('+f3(g.dW[1][1])+') = '+f3(a.W[1][1])+'</span>\n'+
-      '<span class="gr">v₁ : '+f3(b.v[0])+' − '+n2(lr)+'×('+f3(g.dv[0])+') = '+f3(a.v[0])+'</span>\n'+
-      '<span class="gr">b₀ : '+f3(b.bo)+' − '+n2(lr)+'×('+f3(g.dbo)+') = '+f3(a.bo)+'</span>\n'+
-      '<span class="hl">改完再预测：p 会从 '+f3(f.p)+' 升向 '+f3(ST[Math.min(si+1,ST.length-1)].fwd.p)+'</span>';
-  }
-
-  for(var i=0;i<ST.length;i++){var b=document.createElement('b');b.dataset.i=i;dotsBox.appendChild(b);}
-  var dots=dotsBox.querySelectorAll('b');
-  dots.forEach(function(b){b.addEventListener('click',function(){si=+this.dataset.i;elapsed=0;});});
-  playBtn.addEventListener('click',function(){playing=!playing;playBtn.textContent=playing?'⏸ 暂停':'▶ 播放';playBtn.classList.toggle('on',playing);});
-  replayBtn.addEventListener('click',function(){si=0;elapsed=0;playing=true;playBtn.textContent='⏸ 暂停';playBtn.classList.add('on');});
-  speedBtn.addEventListener('click',function(){rate=rate===1?2:(rate===2?0.5:1);speedBtn.textContent='速度 '+rate+'×';});
-
-  var total=BEATS.reduce(function(s,b){return s+b.dur;},0);
-  var si=0,elapsed=0,playing=true,rate=1,last=performance.now(),curBeat=-1;
-  function project(pos){
-    var v=new THREE.Vector3(pos[0],pos[1],pos[2]).project(camera);
-    return {x:(v.x*.5+.5)*W,y:(-v.y*.5+.5)*H,vis:v.z<1};
-  }
-  function placeLabels(rec,bi){
-    Object.keys(POS).forEach(function(k){
-      var p=project(POS[k]),d=nodeLabels[k];
-      d.style.left=(p.x/W*100)+'%';d.style.top=((p.y-46)/H*100)+'%';d.style.display=p.vis?'block':'none';
-      var vl='';
-      if(bi<=3){vl=({x1:rec.x[0].toFixed(0),x2:rec.x[1].toFixed(0),h1:f3(rec.fwd.h1),h2:f3(rec.fwd.h2),y:'p '+f3(rec.fwd.p),L:'L '+f3(rec.fwd.loss)})[k];}
-      else if(bi===4){vl=k==='y'?('∇'+f3(rec.grad.dlogit)):(k==='L'?f3(rec.fwd.loss):'');}
-      else if(bi===5){vl=k==='h1'?('∇'+f3(rec.grad.dz[0])):(k==='h2'?('∇'+f3(rec.grad.dz[1])):'');}
-      else if(bi===6){vl=k==='x2'?('∇w '+f3(rec.grad.dW[0][1])):'';}
-      else {vl=k==='h1'?f3(rec.after.W[0][1]):(k==='y'?f3(rec.after.v[0]):'');}
-      d.querySelector('.vl').textContent=vl;
-    });
-    EDEF.forEach(function(e){
-      var a=POS[e[0]],b=POS[e[1]];
-      var mid=[(a[0]+b[0])/2,(a[1]+b[1])/2,(a[2]+b[2])/2],p=project(mid),lab=edgeLabels[e[2]];
-      lab.style.left=(p.x/W*100)+'%';lab.style.top=(p.y/H*100)+'%';lab.style.display=p.vis?'block':'none';
-      var txt;
-      if(bi>=4&&bi<=6){
-        var gv=(e[2]==='w00'||e[2]==='w01'||e[2]==='w10'||e[2]==='w11')?rec.grad.dW[+e[2][1]][+e[2][2]]:(e[2]==='v0'?rec.grad.dv[0]:(e[2]==='v1'?rec.grad.dv[1]:null));
-        txt=gv==null?'':('g '+f3(gv));lab.style.color='#fca5a5';
-      } else if(bi===7){
-        var wv=(e[2][0]==='w')?rec.after.W[+e[2][1]][+e[2][2]]:(e[2]==='v0'?rec.after.v[0]:(e[2]==='v1'?rec.after.v[1]:null));
-        txt=wv==null?'':n2(wv);lab.style.color='#86efac';
-      } else {
-        var w2=(e[2][0]==='w')?rec.before.W[+e[2][1]][+e[2][2]]:(e[2]==='v0'?rec.before.v[0]:(e[2]==='v1'?rec.before.v[1]:null));
-        txt=w2==null?'':n2(w2);lab.style.color='#93c5fd';
-      }
-      lab.textContent=txt;
-    });
-  }
-  function colorLines(bi){
-    EDEF.forEach(function(e){var m=lineMesh[e[2]];
-      if(bi>=4&&bi<=6){m.material.color.setHex(0xef4444);m.material.opacity=.9;}
-      else if(bi===7){m.material.color.setHex(0x4ade80);m.material.opacity=.9;}
-      else {m.material.color.setHex(0x3b5b8c);m.material.opacity=.75;}
-    });
-  }
-  function frame(now){
-    var dt=Math.min(now-last,60);last=now;
-    if(playing)elapsed+=dt*rate;
-    if(elapsed>=total){elapsed-=total;si=(si+1)%ST.length;}
-    var acc=0,bi=BEATS.length-1;
-    for(var i=0;i<BEATS.length;i++){acc+=BEATS[i].dur;if(elapsed<acc){bi=i;break;}}
-    var beat=BEATS[bi],rec=ST[si];
-    var beforeDur=0;for(var i=0;i<bi;i++)beforeDur+=BEATS[i].dur;
-    var into=Math.max(0,Math.min(elapsed-beforeDur,beat.dur));
-    var prog=Math.max(0,Math.min(1,into/beat.dur));
-
-    if(bi!==curBeat){curBeat=bi;tag.textContent=beat.tag;eqEl.innerHTML=buildEq(rec,bi);
-      titleEl.textContent=['z₁、h₁ 怎么算','z₂、h₂ 怎么算','合成预测 p','损失 L','梯度从这里出发','链式法则往回传','每个权重的梯度','参数具体怎么改'][bi];}
-    epEl.textContent='样本 01 → 1 · 第 '+(si+1)+'/'+ST.length+' 次更新  |  p='+f3(rec.fwd.p)+' → '+f3(ST[(si+1)%ST.length].fwd.p);
-    dots.forEach(function(b,i){b.classList.toggle('on',i===si);});
-    bar.style.width=(elapsed/total*100).toFixed(1)+'%';
-
-    colorLines(bi);
-    placeLabels(rec,bi);
-    // packet along route
-    var route=beat.route, seg=1/(route.length-1), q=prog, idx=Math.min(route.length-2,Math.floor(q/seg)), lt=(q-idx*seg)/seg;
-    var A=POS[route[idx]],Bp=POS[route[idx+1]],ee=lt*lt*(3-2*lt);
-    pk.position.set(A[0]+(Bp[0]-A[0])*ee,A[1]+(Bp[1]-A[1])*ee,A[2]+(Bp[2]-A[2])*ee);
-    pkHalo.material.color.setHex(beat.col);
-    var pulse=.24+.06*Math.sin(now/160);
-    pk.scale.setScalar(bi===7?1.25:1);
-    Object.keys(nodeMesh).forEach(function(k){nodeMesh[k].material.emissiveIntensity=(route.indexOf(k)>=0)?(0.75+0.2*Math.sin(now/180)):0.4;});
-    if(!dragging)theta+=0.0009;
-    cam();
-    renderer.render(scene,camera);
-    requestAnimationFrame(frame);
-  }
-  requestAnimationFrame(frame);
-})();
-</script>
 
 
 <div class="backbar" style="padding-left:0"><span class="backbtn">← 返回作业目录</span></div>
