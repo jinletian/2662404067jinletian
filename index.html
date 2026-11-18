@@ -1209,6 +1209,229 @@ print("预测 =", pred.flatten().tolist())   # -&gt; [0,1,1,0] 全对</pre></div
 })();
 </script>
 
+
+<style>
+.mv-wrap{background:#0b1020;border:1px solid #1e293b;border-radius:20px;padding:18px;margin:24px 0;box-shadow:0 16px 40px rgba(15,23,42,.28);overflow:hidden}
+.mv-top{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:2px 4px 14px}
+.mv-phase{font-size:13px;font-weight:800;letter-spacing:1px;color:#7dd3fc;background:rgba(56,189,248,.12);border:1px solid rgba(56,189,248,.35);border-radius:8px;padding:5px 12px;min-width:96px;text-align:center}
+.mv-title{font-size:14px;color:#94a3b8;font-weight:700}
+.mv-epoch{font-size:13px;color:#fbbf24;font-weight:800;font-variant-numeric:tabular-nums}
+.mv-spacer{flex:1}
+.mv-btn{background:#131b30;color:#cbd5e1;border:1px solid #273349;border-radius:8px;font-size:12.5px;font-weight:700;padding:6px 12px;cursor:pointer;transition:.15s}
+.mv-btn:hover{background:#1e293b;color:#fff}
+.mv-btn.on{background:#3730a3;border-color:#6366f1;color:#fff}
+.mv-stage{position:relative;background:#080d1a;border:1px solid #1e293b;border-radius:14px;overflow:hidden}
+.mv-stage canvas{display:block;width:100%;height:auto}
+.mv-bar{height:5px;background:#111827;border-radius:99px;margin-top:12px;overflow:hidden}
+.mv-bar i{display:block;height:100%;background:linear-gradient(90deg,#38bdf8,#a78bfa);width:0%;border-radius:99px;transition:width .1s linear}
+.mv-dots{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+.mv-dots b{width:9px;height:9px;border-radius:50%;background:#1e293b;display:block;cursor:pointer;transition:.15s}
+.mv-dots b.on{background:#38bdf8;box-shadow:0 0 8px #38bdf8}
+.mv-hint{font-size:11.5px;color:#64748b;margin-top:10px;text-align:center;letter-spacing:.3px}
+@media(max-width:640px){.mv-title{display:none}}
+</style>
+
+    <h2><span class="num">10</span>一段"视频"：跟着一个数据走完整个学习过程</h2>
+    <p class="lead">不用读文字——看动画。一个样本 01（正确答案 1）在立体空间里往前走一遍、把"错多少"送回来、再改参数；改完它下次就更接近正确答案。共 8 次真实的更新，自动循环播放。</p>
+
+    <div class="mv-wrap" id="mv">
+      <div class="mv-top">
+        <span class="mv-phase" id="mvPhase">FORWARD</span>
+        <span class="mv-title">跟着样本 01 → 答案 1</span>
+        <span class="mv-epoch" id="mvEpoch">第 1 / 8 次更新</span>
+        <span class="mv-spacer"></span>
+        <button class="mv-btn on" id="mvPlay">⏸ 暂停</button>
+        <button class="mv-btn" id="mvReplay">↻ 重播</button>
+        <button class="mv-btn" id="mvSpeed">速度 1×</button>
+      </div>
+      <div class="mv-stage"><canvas id="mvCanvas" width="900" height="560"></canvas></div>
+      <div class="mv-bar"><i id="mvBar"></i></div>
+      <div class="mv-dots" id="mvDots"></div>
+      <div class="mv-hint">青色 = 数据往前走 · 红色 = 误差往回传 · 绿色 = 参数被修改　|　圆点/文字可点选跳到某次更新</div>
+    </div>
+
+<script>
+(function(){
+  var D={"steps":[{"before":{"W":[[2.0,-2.0],[-2.0,2.0]],"bh":[-1.0,-1.0],"v":[3.0,3.0],"bo":-2.5},"fwd":{"x":[0.0,1.0],"z":[-3.0,1.0],"h":[0.0474,0.7311],"logit":-0.1645,"p":0.459,"target":1,"loss":0.7788},"grad":{"dlogit":-1.1645,"dv":[-0.0257,-0.3955],"dbo":-0.541,"dh":[-3.4936,-3.4936],"dz":[-0.1578,-0.6869],"dW":[[0.0,0.0],[-0.0733,-0.3191]],"dbh":[-0.0733,-0.3191]},"after":{"W":[[2.0,-2.0],[-1.97,2.03]],"bh":[-0.97,-0.97],"v":[3.03,3.03],"bo":-2.47}},{"before":{"W":[[2.0,-2.0],[-1.97,2.03]],"bh":[-0.97,-0.97],"v":[3.03,3.03],"bo":-2.47},"fwd":{"x":[0.0,1.0],"z":[-2.94,1.06],"h":[0.0502,0.7427],"logit":-0.0675,"p":0.4831,"target":1,"loss":0.7275},"grad":{"dlogit":-1.0675,"dv":[-0.026,-0.3839],"dbo":-0.5169,"dh":[-3.2345,-3.2345],"dz":[-0.1543,-0.6181],"dW":[[0.0,0.0],[-0.0747,-0.2993]],"dbh":[-0.0747,-0.2993]},"after":{"W":[[2.0,-2.0],[-1.94,2.0599]],"bh":[-0.94,-0.9401],"v":[3.06,3.06],"bo":-2.44}},{"before":{"W":[[2.0,-2.0],[-1.94,2.0599]],"bh":[-0.94,-0.9401],"v":[3.06,3.06],"bo":-2.44},"fwd":{"x":[0.0,1.0],"z":[-2.88,1.1199],"h":[0.0532,0.754],"logit":0.0297,"p":0.5074,"target":1,"loss":0.6784},"grad":{"dlogit":-0.9703,"dv":[-0.0262,-0.3714],"dbo":-0.4926,"dh":[-2.9691,-2.969],"dz":[-0.1494,-0.5508],"dW":[[0.0,0.0],[-0.0759,-0.2796]],"dbh":[-0.0759,-0.2796]},"after":{"W":[[2.0,-2.0],[-1.91,2.0898]],"bh":[-0.91,-0.9102],"v":[3.09,3.0899],"bo":-2.4102}},{"before":{"W":[[2.0,-2.0],[-1.91,2.0898]],"bh":[-0.91,-0.9102],"v":[3.09,3.0899],"bo":-2.4102},"fwd":{"x":[0.0,1.0],"z":[-2.8199,1.1795],"h":[0.0563,0.7649],"logit":0.127,"p":0.5317,"target":1,"loss":0.6317},"grad":{"dlogit":-0.873,"dv":[-0.0263,-0.3582],"dbo":-0.4683,"dh":[-2.6976,-2.6974],"dz":[-0.1432,-0.4851],"dW":[[0.0,0.0],[-0.0768,-0.2602]],"dbh":[-0.0768,-0.2602]},"after":{"W":[[2.0,-2.0],[-1.8799,2.1194]],"bh":[-0.8799,-0.8806],"v":[3.1201,3.1197],"bo":-2.3804}},{"before":{"W":[[2.0,-2.0],[-1.8799,2.1194]],"bh":[-0.8799,-0.8806],"v":[3.1201,3.1197],"bo":-2.3804},"fwd":{"x":[0.0,1.0],"z":[-2.7598,1.2388],"h":[0.0595,0.7754],"logit":0.2243,"p":0.5558,"target":1,"loss":0.5873},"grad":{"dlogit":-0.7757,"dv":[-0.0264,-0.3444],"dbo":-0.4442,"dh":[-2.4203,-2.4201],"dz":[-0.1355,-0.4215],"dW":[[0.0,0.0],[-0.0776,-0.2414]],"dbh":[-0.0776,-0.2414]},"after":{"W":[[2.0,-2.0],[-1.8498,2.1488]],"bh":[-0.8498,-0.8512],"v":[3.1501,3.1495],"bo":-2.3508}},{"before":{"W":[[2.0,-2.0],[-1.8498,2.1488]],"bh":[-0.8498,-0.8512],"v":[3.1501,3.1495],"bo":-2.3508},"fwd":{"x":[0.0,1.0],"z":[-2.6996,1.2977],"h":[0.063,0.7854],"logit":0.3214,"p":0.5797,"target":1,"loss":0.5453},"grad":{"dlogit":-0.6786,"dv":[-0.0265,-0.3301],"dbo":-0.4203,"dh":[-2.1376,-2.1372],"dz":[-0.1262,-0.3602],"dW":[[0.0,0.0],[-0.0782,-0.2231]],"dbh":[-0.0782,-0.2231]},"after":{"W":[[2.0,-2.0],[-1.8197,2.178]],"bh":[-0.8197,-0.822],"v":[3.1802,3.1791],"bo":-2.3213}},{"before":{"W":[[2.0,-2.0],[-1.8197,2.178]],"bh":[-0.8197,-0.822],"v":[3.1802,3.1791],"bo":-2.3213},"fwd":{"x":[0.0,1.0],"z":[-2.6394,1.3559],"h":[0.0666,0.7951],"logit":0.4183,"p":0.6031,"target":1,"loss":0.5057},"grad":{"dlogit":-0.5817,"dv":[-0.0265,-0.3156],"dbo":-0.3969,"dh":[-1.8499,-1.8493],"dz":[-0.1151,-0.3013],"dW":[[0.0,0.0],[-0.0785,-0.2056]],"dbh":[-0.0785,-0.2056]},"after":{"W":[[2.0,-2.0],[-1.7896,2.2068]],"bh":[-0.7896,-0.7932],"v":[3.2102,3.2086],"bo":-2.2921}},{"before":{"W":[[2.0,-2.0],[-1.7896,2.2068]],"bh":[-0.7896,-0.7932],"v":[3.2102,3.2086],"bo":-2.2921},"fwd":{"x":[0.0,1.0],"z":[-2.5792,1.4135],"h":[0.0705,0.8043],"logit":0.5149,"p":0.626,"target":1,"loss":0.4685},"grad":{"dlogit":-0.4851,"dv":[-0.0264,-0.3009],"dbo":-0.374,"dh":[-1.5573,-1.5565],"dz":[-0.102,-0.245],"dW":[[0.0,0.0],[-0.0787,-0.1889]],"dbh":[-0.0787,-0.1889]},"after":{"W":[[2.0,-2.0],[-1.7594,2.2352]],"bh":[-0.7594,-0.7648],"v":[3.2403,3.2378],"bo":-2.2632}}]}, STEPS=D.steps;
+  var cv=document.getElementById('mvCanvas'), ctx=cv.getContext('2d');
+  var W=cv.width, H=cv.height, cx=W*0.46, cy=H*0.52, SC=88;
+  var phaseEl=document.getElementById('mvPhase'), epEl=document.getElementById('mvEpoch');
+  var barEl=document.getElementById('mvBar'), dotsEl=document.getElementById('mvDots');
+  var playBtn=document.getElementById('mvPlay'), replayBtn=document.getElementById('mvReplay'), speedBtn=document.getElementById('mvSpeed');
+
+  var NODES={
+    x1:{p:{x:-3.5,y:1.45,z:0},  l:'x1'},
+    x2:{p:{x:-3.5,y:-1.45,z:0}, l:'x2'},
+    h1:{p:{x:0,  y:1.55,z:-0.8},l:'h1'},
+    h2:{p:{x:0,  y:-1.55,z:0.8},l:'h2'},
+    y :{p:{x:3.2,y:0,z:0},       l:'y'},
+    L :{p:{x:5.1,y:0,z:-1.6},    l:'L'}
+  };
+  var E=[
+    {a:'x1',b:'h1',k:'w00'},{a:'x1',b:'h2',k:'w01'},
+    {a:'x2',b:'h1',k:'w10'},{a:'x2',b:'h2',k:'w11'},
+    {a:'h1',b:'y',k:'v0'},{a:'h2',b:'y',k:'v1'},
+    {a:'y',b:'L',k:'loss'}
+  ];
+
+  var DUR=5600, si=0, elapsed=0, playing=true, rate=1, last=performance.now();
+  var PHASES=[{n:'INPUT',s:0,e:520},{n:'FORWARD',s:520,e:1900},{n:'LOSS',s:1900,e:2500},
+              {n:'BACKWARD',s:2500,e:4100},{n:'UPDATE',s:4100,e:5600}];
+
+  for(var i=0;i<STEPS.length;i++){var b=document.createElement('b');b.dataset.i=i;dotsEl.appendChild(b);}
+  var dotEls=dotsEl.querySelectorAll('b');
+  dotEls.forEach(function(b){b.addEventListener('click',function(){si=+this.dataset.i;elapsed=0;});});
+  playBtn.addEventListener('click',function(){playing=!playing;playBtn.textContent=playing?'⏸ 暂停':'▶ 播放';playBtn.classList.toggle('on',playing);});
+  replayBtn.addEventListener('click',function(){si=0;elapsed=0;playing=true;playBtn.textContent='⏸ 暂停';playBtn.classList.add('on');});
+  speedBtn.addEventListener('click',function(){rate=rate===1?2:(rate===2?0.5:1);speedBtn.textContent='速度 '+rate+'×';});
+
+  function rot(p,ay,ax){
+    var x1=p.x*Math.cos(ay)-p.z*Math.sin(ay), z1=p.x*Math.sin(ay)+p.z*Math.cos(ay);
+    var y2=p.y*Math.cos(ax)-z1*Math.sin(ax), z2=p.y*Math.sin(ax)+z1*Math.cos(ax);
+    var f=9/(9-z2);
+    return {x:cx+x1*f*SC, y:cy-y2*f*SC, s:f, z:z2};
+  }
+  function wpos(node){return rot(NODES[node].p,AY,AX);}
+  function lerp(a,b,t){return a+(b-a)*t;}
+  function clamp(v,a,b){return Math.max(a,Math.min(b,v));}
+  function ease(t){return t*t*(3-2*t);}
+  function fmt(n){return (n>=0?'+':'')+n.toFixed(2);}
+  function glow(x,y,r,col,intensity){
+    var g=ctx.createRadialGradient(x,y,0,x,y,r);
+    g.addColorStop(0,col); g.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.globalAlpha=intensity; ctx.fillStyle=g; ctx.beginPath();ctx.arc(x,y,r,0,7);ctx.fill();ctx.globalAlpha=1;
+  }
+  function label(x,y,text,col,size,weight){
+    ctx.font=(weight||700)+' '+(size||13)+'px ui-monospace,Menlo,Consolas,monospace';
+    ctx.fillStyle=col||'#e2e8f0'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(text,x,y);
+  }
+
+  var AY=-0.42, AX=0.22;
+  function floorGrid(){
+    ctx.strokeStyle='rgba(99,116,139,.16)';ctx.lineWidth=1;
+    for(var gx=-5;gx<=6;gx+=1){
+      var a=rot({x:gx,y:-2.5,z:-3},AY,AX), b=rot({x:gx,y:-2.5,z:3},AY,AX);
+      ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();
+    }
+    for(var gz=-3;gz<=3;gz+=1){
+      var a2=rot({x:-5,y:-2.5,z:gz},AY,AX), b2=rot({x:6,y:-2.5,z:gz},AY,AX);
+      ctx.beginPath();ctx.moveTo(a2.x,a2.y);ctx.lineTo(b2.x,b2.y);ctx.stroke();
+    }
+  }
+  function weightOf(e,st,useAfter){
+    var B=(useAfter?st.after:st.before);
+    if(e.k==='loss') return null;
+    if(e.k[0]==='w') return B.W[+e.k[1]][+e.k[2]];
+    if(e.k[0]==='v') return B.v[+e.k[1]];
+    return null;
+  }
+
+  function drawEdges(st,phase,tt,updateT){
+    E.forEach(function(e){
+      var A=wpos(e.a), Bp=wpos(e.b);
+      var w=weightOf(e,st,false), wa=weightOf(e,st,true);
+      var mag=w==null?0.5:clamp(Math.abs(w)/7,0.08,1);
+      var col=(phase==='BACKWARD')?'239,68,68':(phase==='UPDATE'?'74,222,128':'96,165,250');
+      ctx.strokeStyle='rgba('+col+','+(0.18+mag*0.5).toFixed(2)+')';
+      ctx.lineWidth=(1.2+mag*3.2).toFixed(1);
+      ctx.beginPath();ctx.moveTo(A.x,A.y);ctx.lineTo(Bp.x,Bp.y);ctx.stroke();
+      // weight number on input->hidden and hidden->out edges
+      if(w!=null){
+        var mx=lerp(A.x,Bp.x,0.55), my=lerp(A.y,Bp.y,0.55);
+        var shown=(phase==='UPDATE')?lerp(w,wa==null?w:wa,ease(updateT)):w;
+        label(mx,my-9,fmt(shown), phase==='UPDATE'?'#86efac':'#7dd3fc',12,600);
+        if(phase==='BACKWARD'){
+          var gv=null;
+          if(e.k[0]==='w') gv=st.grad.dW[+e.k[1]][+e.k[2]];
+          if(e.k[0]==='v') gv=st.grad.dv[+e.k[1]];
+          if(gv!=null) label(mx,my+10,'g='+fmt(gv),'#fca5a5',11,600);
+        }
+      }
+    });
+  }
+
+  function drawNodes(st,phase){
+    Object.keys(NODES).forEach(function(key){
+      var P=wpos(key), n=NODES[key], r=20*P.s;
+      var active=false, val='', sub='', col='#38bdf8';
+      var f=st.fwd,g=st.grad;
+      if(key==='x1'){val=f.x[0].toFixed(0);active=phase==='INPUT';}
+      if(key==='x2'){val=f.x[1].toFixed(0);active=phase==='INPUT';}
+      if(key==='h1'){val=f.h[0].toFixed(2);sub='z '+f.z[0].toFixed(2);active=phase==='FORWARD'||phase==='BACKWARD';col='#a78bfa';
+        if(phase==='BACKWARD'){val='∇'+g.dz[0].toFixed(2);sub='';col='#f87171';}}
+      if(key==='h2'){val=f.h[1].toFixed(2);sub='z '+f.z[1].toFixed(2);active=phase==='FORWARD'||phase==='BACKWARD';col='#a78bfa';
+        if(phase==='BACKWARD'){val='∇'+g.dz[1].toFixed(2);sub='';col='#f87171';}}
+      if(key==='y'){val=f.p.toFixed(2);sub='L '+f.logit.toFixed(2);active=phase==='FORWARD'||phase==='LOSS';col='#34d399';
+        if(phase==='BACKWARD'){val='∇'+g.dlogit.toFixed(2);sub='';col='#f87171';}}
+      if(key==='L'){val=f.loss.toFixed(3);sub='目标 1';active=phase==='LOSS'||phase==='BACKWARD';col=(f.loss>0.35?'#f59e0b':'#34d399');}
+      var glowCol=active?(phase==='BACKWARD'?'rgba(248,113,113,.9)':(phase==='UPDATE'?'rgba(74,222,128,.85)':'rgba(56,189,248,.85)')):'rgba(100,116,139,.4)';
+      glow(P.x,P.y,r*2.1,glowCol,active?0.9:0.35);
+      ctx.fillStyle=active?'#1e293b':'#141b2e';ctx.strokeStyle=active?col:'#334155';ctx.lineWidth=active?2.5:1.5;
+      ctx.beginPath();ctx.arc(P.x,P.y,r,0,7);ctx.fill();ctx.stroke();
+      label(P.x,P.y-r-11,n.l,'#94a3b8',12,700);
+      if(active){label(P.x,P.y,val,'#f8fafc',12,700); if(sub) label(P.x,P.y+r+11,sub,'#64748b',11,600);}
+      else {label(P.x,P.y,n.l==='L'?'L':'·','#475569',11,700);}
+    });
+  }
+
+  function packet(path,t,col,labelTxt,intensity){
+    var seg=1/(path.length-1), q=clamp(t,0,1);
+    var idx=Math.min(path.length-2,Math.floor(q/seg)), lt=(q-idx*seg)/seg;
+    var A=wpos(path[idx]), Bp=wpos(path[idx+1]);
+    var x=lerp(A.x,Bp.x,ease(lt)), y=lerp(A.y,Bp.y,ease(lt));
+    glow(x,y,26,col,intensity);
+    ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(x,y,5.5,0,7);ctx.fill();
+    if(labelTxt) label(x,y-16,labelTxt,'#f8fafc',12,700);
+  }
+
+  function frame(now){
+    var dt=now-last; last=now;
+    if(playing) elapsed+=dt*rate;
+    if(elapsed>=DUR){elapsed=0;si=(si+1)%STEPS.length;}
+    var st=STEPS[si], t=elapsed;
+    var ph=PHASES[0]; for(var i=0;i<PHASES.length;i++){if(t>=PHASES[i].s&&t<PHASES[i].e){ph=PHASES[i];break;}}
+    if(t>=PHASES[PHASES.length-1].e) ph=PHASES[PHASES.length-1];
+
+    AY=-0.42+0.10*Math.sin(now/4200); AX=0.22+0.03*Math.sin(now/5300);
+    ctx.clearRect(0,0,W,H);
+    var bg=ctx.createLinearGradient(0,0,0,H);bg.addColorStop(0,'#0b1224');bg.addColorStop(1,'#070b16');
+    ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);
+    floorGrid();
+
+    var phaseName=ph.n==='INPUT'?'INPUT  ·  x=(0,1)':ph.n;
+    if(ph.n==='INPUT') phaseName='FORWARD';
+    phaseEl.textContent=phaseName;
+    phaseEl.style.color=(ph.n==='BACKWARD')?'#fca5a5':(ph.n==='UPDATE'?'#86efac':'#7dd3fc');
+    phaseEl.style.borderColor=(ph.n==='BACKWARD')?'rgba(248,113,113,.4)':(ph.n==='UPDATE'?'rgba(74,222,128,.4)':'rgba(56,189,248,.35)');
+    epEl.textContent='第 '+(si+1)+' / '+STEPS.length+' 次更新';
+    barEl.style.width=(t/DUR*100).toFixed(1)+'%';
+    dotEls.forEach(function(b,i){b.classList.toggle('on',i===si);});
+
+    var updateT=clamp((t-4100)/(5600-4100),0,1);
+    drawEdges(st,ph.n,t,updateT);
+    drawNodes(st,ph.n);
+
+    if(ph.n==='FORWARD'){
+      var lt=clamp((t-520)/(1900-520),0,1);
+      if(lt<0.55) packet(['x1','x2','h1','h2'],lt/0.55,'rgba(56,189,248,.95)','数据',1);
+      else packet(['h1','h2','y'],(lt-0.55)/0.45,'rgba(52,211,153,.95)','预测',1);
+    } else if(ph.n==='LOSS'){
+      packet(['y','L'],clamp((t-1900)/600,0,1),'rgba(245,158,11,.95)','误差',1);
+    } else if(ph.n==='BACKWARD'){
+      var bt=clamp((t-2500)/(4100-2500),0,1);
+      if(bt<0.5) packet(['L','y','h1','h2'],bt/0.5,'rgba(239,68,68,.95)','梯度 ←',1);
+      else packet(['h1','h2','x1','x2'],(bt-0.5)/0.5,'rgba(239,68,68,.95)','更新权重',1);
+    } else if(ph.n==='UPDATE'){
+      for(var k=0;k<E.length;k++){var e=E[k];if(e.k==='loss')continue;var A=wpos(e.a),Bp=wpos(e.b);
+        glow(lerp(A.x,Bp.x,0.55),lerp(A.y,Bp.y,0.55),16+18*Math.sin(updateT*Math.PI),'rgba(74,222,128,.7)',0.5);}
+      label(cx,H-26,'参数已修改 → 下次预测更接近 1','#86efac',13,700);
+    }
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();
+</script>
+
 <div class="backbar" style="padding-left:0"><span class="backbtn">← 返回作业目录</span></div>
   </div>
 </div>
